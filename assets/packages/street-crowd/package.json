@@ -1,0 +1,149 @@
+{
+ "template": "street-crowd",
+ "size": [
+  1920,
+  1080
+ ],
+ "fps": 24,
+ "duration": 2.2,
+ "sound": "full",
+ "base": "base.jpg",
+ "plate": "plate/",
+ "sky": "sky.png",
+ "near": "near.png",
+ "camera": {
+  "from": [
+   10,
+   20,
+   1920
+  ],
+  "to": [
+   66,
+   20,
+   1920
+  ]
+ },
+ "actors": [
+  {
+   "img": "sp/giant.png",
+   "x": 936,
+   "y": 600,
+   "h": 672,
+   "behind": true,
+   "enter": {
+    "from": [
+     420,
+     0
+    ],
+    "at": 0.1,
+    "dur": 0.5
+   },
+   "sway": 0.02,
+   "blink": {
+    "eye": [
+     [
+      279,
+      380,
+      48
+     ],
+     [
+      453,
+      322,
+      50
+     ]
+    ],
+    "at": [
+     1.2
+    ]
+   }
+  },
+  {
+   "img": "sp/sugar.png",
+   "x": 1300,
+   "y": 772,
+   "h": 72,
+   "behind": true,
+   "enter": {
+    "from": [
+     110,
+     0
+    ],
+    "at": 1.6,
+    "dur": 0.4
+   }
+  },
+  {
+   "img": "sp/donut.png",
+   "x": 1412,
+   "y": 470,
+   "h": 70,
+   "idle": "nod",
+   "phase": 1.0
+  },
+  {
+   "img": "sp/spoon.png",
+   "x": 520,
+   "y": 748,
+   "h": 110,
+   "idle": "nod",
+   "phase": 2.2,
+   "behind": "people"
+  },
+  {
+   "img": "sp/muffin.png",
+   "x": 640,
+   "y": 742,
+   "h": 62,
+   "idle": "nod",
+   "phase": 0.4,
+   "behind": "people"
+  },
+  {
+   "img": "sp/drop.png",
+   "x": 1640,
+   "y": 832,
+   "h": 92,
+   "idle": "nod",
+   "phase": 3.0,
+   "flip": true
+  },
+  {
+   "walk": [
+    "sp/c0.png",
+    "sp/c1.png",
+    "sp/c2.png",
+    "sp/c3.png"
+   ],
+   "from": [
+    560,
+    1012,
+    315
+   ],
+   "to": [
+    650,
+    946,
+    240
+   ],
+   "phase": 0
+  },
+  {
+   "walk": [
+    "sp/l0.png",
+    "sp/l1.png",
+    "sp/l2.png",
+    "sp/l3.png"
+   ],
+   "from": [
+    1182,
+    1010,
+    290
+   ],
+   "to": [
+    1142,
+    944,
+    225
+   ],
+   "phase": 2
+  }
+ ]
+}

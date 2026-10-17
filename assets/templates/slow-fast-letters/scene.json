@@ -1,0 +1,343 @@
+{
+ "base": "base.png",
+ "duration": 3.57,
+ "camera": {
+  "push": 0.04,
+  "drift": 0.4
+ },
+ "graphics": [
+  {
+   "art": "logo.png",
+   "surface": {
+    "quad": "TODO 表面四角 [[左上],[右上],[右下],[左下]]；整面玻璃就写整幅画面的四个角"
+   },
+   "place": {
+    "width": 0.46,
+    "height": 0.42,
+    "anchor": [
+     0.43,
+     0.57
+    ]
+   },
+   "look": {
+    "shade": 0.05,
+    "soften": 0.3,
+    "boil": 0.15,
+    "clip": false
+   },
+   "groups": [
+    {
+     "name": "good",
+     "box": [
+      350,
+      100,
+      870,
+      362
+     ],
+     "motion": "pop",
+     "at": 0.03,
+     "step": 0.17,
+     "stagger": "even",
+     "idle": "none"
+    },
+    {
+     "name": "company",
+     "box": "rest",
+     "motion": "pop",
+     "at": 1.67,
+     "step": 0.08,
+     "stagger": "even",
+     "idle": "none"
+    }
+   ]
+  },
+  {
+   "art": "pose_stand.png",
+   "surface": {
+    "quad": "TODO 表面四角 [[左上],[右上],[右下],[左下]]；整面玻璃就写整幅画面的四个角"
+   },
+   "place": {
+    "width": 0.25,
+    "height": 0.56,
+    "anchor": [
+     0.71,
+     0.31
+    ]
+   },
+   "look": {
+    "shade": 0.05,
+    "soften": 0.3,
+    "boil": 0.15,
+    "clip": false
+   },
+   "rig": {
+    "enter": {
+     "motion": "drop",
+     "at": 0.72,
+     "dur": 0.55,
+     "fallFrac": 0.5,
+     "fall": 0.9,
+     "spin": 0.15,
+     "squash": 0.15,
+     "idle": "none",
+     "dust": false
+    },
+    "parts": {
+     "root": {
+      "virtual": true,
+      "pivot_frac": [
+       0.52,
+       0.86
+      ]
+     },
+     "stand": {
+      "png": "pose_stand.png",
+      "parent": "root"
+     },
+     "shake": {
+      "png": "pose_react.png",
+      "parent": "root"
+     },
+     "sip": {
+      "png": "pose_act.png",
+      "parent": "root"
+     },
+     "shades": {
+      "png": "pose_end.png",
+      "parent": "root"
+     }
+    },
+    "acts": [
+     {
+      "do": "show",
+      "part": "stand",
+      "keys": [
+       [
+        0,
+        1
+       ],
+       [
+        1.09,
+        1
+       ],
+       [
+        1.1,
+        0
+       ],
+       [
+        1.45,
+        0
+       ],
+       [
+        1.46,
+        1
+       ],
+       [
+        1.66,
+        1
+       ],
+       [
+        1.67,
+        0
+       ]
+      ]
+     },
+     {
+      "do": "show",
+      "part": "shake",
+      "keys": [
+       [
+        0,
+        0
+       ],
+       [
+        1.09,
+        0
+       ],
+       [
+        1.1,
+        1
+       ],
+       [
+        1.45,
+        1
+       ],
+       [
+        1.46,
+        0
+       ]
+      ]
+     },
+     {
+      "do": "show",
+      "part": "sip",
+      "keys": [
+       [
+        0,
+        0
+       ],
+       [
+        1.66,
+        0
+       ],
+       [
+        1.67,
+        1
+       ],
+       [
+        2.55,
+        1
+       ],
+       [
+        2.56,
+        0
+       ]
+      ]
+     },
+     {
+      "do": "show",
+      "part": "shades",
+      "keys": [
+       [
+        0,
+        0
+       ],
+       [
+        2.55,
+        0
+       ],
+       [
+        2.56,
+        1
+       ]
+      ]
+     },
+     {
+      "do": "rotate",
+      "part": "root",
+      "keys": [
+       [
+        1.1,
+        0
+       ],
+       [
+        1.17,
+        -7
+       ],
+       [
+        1.24,
+        6
+       ],
+       [
+        1.31,
+        -5
+       ],
+       [
+        1.38,
+        3
+       ],
+       [
+        1.45,
+        0
+       ]
+      ]
+     },
+     {
+      "do": "scale",
+      "part": "root",
+      "keys": [
+       [
+        2.56,
+        1,
+        1
+       ],
+       [
+        2.61,
+        1.04,
+        0.97
+       ],
+       [
+        2.7,
+        1,
+        1
+       ]
+      ]
+     },
+     {
+      "do": "bob",
+      "part": "root",
+      "from": 2.8,
+      "amp_px": 3,
+      "period": 1.1
+     }
+    ]
+   }
+  },
+  {
+   "text": {
+    "lines": [
+     "coffee"
+    ],
+    "weight": 600,
+    "color": "#ffffff",
+    "font": "\"Avenir Next\", \"Helvetica Neue\", sans-serif"
+   },
+   "surface": {
+    "quad": "TODO 表面四角 [[左上],[右上],[右下],[左下]]；整面玻璃就写整幅画面的四个角"
+   },
+   "place": {
+    "width": 0.07,
+    "height": 0.05,
+    "anchor": [
+     0.31,
+     0.775
+    ]
+   },
+   "look": {
+    "shade": 0.05,
+    "soften": 0.3,
+    "clip": false
+   },
+   "auto": {
+    "title": {
+     "motion": "type",
+     "at": 2.07,
+     "step": 0.04
+    }
+   }
+  },
+  {
+   "text": {
+    "lines": [
+     "shop"
+    ],
+    "weight": 600,
+    "color": "#ffffff",
+    "font": "\"Avenir Next\", \"Helvetica Neue\", sans-serif"
+   },
+   "surface": {
+    "quad": "TODO 表面四角 [[左上],[右上],[右下],[左下]]；整面玻璃就写整幅画面的四个角"
+   },
+   "place": {
+    "width": 0.05,
+    "height": 0.05,
+    "anchor": [
+     0.6,
+     0.775
+    ]
+   },
+   "look": {
+    "shade": 0.05,
+    "soften": 0.3,
+    "clip": false
+   },
+   "auto": {
+    "title": {
+     "motion": "type",
+     "at": 2.73,
+     "step": 0.05
+    }
+   }
+  }
+ ]
+}

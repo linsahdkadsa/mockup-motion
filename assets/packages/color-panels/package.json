@@ -1,0 +1,15 @@
+{
+ "palette": ["#5bb78e", "#79ccee", "#d62c47", "#f5c324"],
+ "ink": "#ffffff",
+ "font": "\"Avenir Next\", \"Montserrat\", sans-serif",
+ "intro": ["THIS", "IS", "WHAT", "WE", "DO"],
+ "segments": [
+  {"title": "VIDEO", "icon": "video"},
+  {"title": "PHOTO", "icon": "photo"},
+  {"title": "MOTION|GRAPHICS", "icon": "bulb"},
+  {"title": "COWORKING", "icon": "team"}
+ ],
+ "segDur": 1.9,
+ "fps": 30,
+ "sound": "full"
+}

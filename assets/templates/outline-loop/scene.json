@@ -1,0 +1,160 @@
+{
+ "base": "base.png",
+ "duration": 3.45,
+ "camera": {
+  "push": 0.04,
+  "drift": 0.6
+ },
+ "graphics": [
+  {
+   "surface": {
+    "seed": "TODO 表面空白处的一个点 [x,y]，或者改成 quad"
+   },
+   "place": {
+    "width": 0.5,
+    "height": 0.84,
+    "anchor": [
+     0.5,
+     0.48
+    ]
+   },
+   "look": {
+    "shade": 0.1,
+    "soften": 0.6,
+    "boil": 0.5
+   },
+   "rig": {
+    "enter": {
+     "motion": "outline",
+     "seed": "bottom",
+     "at": 0.4,
+     "dur": 1.0,
+     "idle": "none",
+     "bandColor": "#ffffff",
+     "fillColor": "#1c2350"
+    },
+    "parts": {
+     "root": {
+      "virtual": true,
+      "pivot_frac": [
+       0.5,
+       0.9
+      ]
+     },
+     "hold": {
+      "png": "hold.jpg",
+      "parent": "root"
+     },
+     "slurpA": {
+      "png": "slurpA.jpg",
+      "parent": "root",
+      "hidden": true
+     },
+     "slurpB": {
+      "png": "slurpB.jpg",
+      "parent": "root",
+      "hidden": true
+     }
+    },
+    "acts": [
+     {
+      "do": "show",
+      "part": "hold",
+      "keys": [
+       [
+        1.33,
+        1
+       ],
+       [
+        1.35,
+        0
+       ]
+      ]
+     },
+     {
+      "do": "cycle",
+      "parts": [
+       "slurpA",
+       "slurpB"
+      ],
+      "from": 1.35,
+      "frames": 5
+     },
+     {
+      "do": "scale",
+      "part": "root",
+      "keys": [
+       [
+        1.35,
+        1,
+        1
+       ],
+       [
+        1.45,
+        1.02,
+        0.98
+       ],
+       [
+        1.55,
+        1,
+        1
+       ]
+      ]
+     }
+    ]
+   },
+   "accents": [
+    {
+     "kind": "curls",
+     "group": "rig",
+     "anchor": [
+      0.5,
+      0.25
+     ],
+     "at": 1.5,
+     "color": "#ffffff",
+     "size": 80,
+     "period": 0.5
+    }
+   ]
+  },
+  {
+   "text": {
+    "lines": [
+     "MOGU"
+    ],
+    "weight": 900,
+    "color": "#ffffff",
+    "font": "\"Arial Rounded MT Bold\", \"Helvetica Neue\", sans-serif",
+    "tracking": 0.02
+   },
+   "surface": {
+    "seed": "TODO 表面空白处的一个点 [x,y]，或者改成 quad"
+   },
+   "place": {
+    "width": 0.22,
+    "height": 0.17,
+    "anchor": [
+     0.37,
+     0.88
+    ]
+   },
+   "look": {
+    "shade": 0.1,
+    "soften": 0.6,
+    "boil": 0.5
+   },
+   "groups": [
+    {
+     "name": "t",
+     "box": "rest",
+     "motion": "pop",
+     "at": 2.9,
+     "step": 0.1,
+     "stagger": "even",
+     "idle": "none"
+    }
+   ]
+  }
+ ]
+}

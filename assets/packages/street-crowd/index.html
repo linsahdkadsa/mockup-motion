@@ -1,0 +1,220 @@
+<!doctype html><html><head><meta charset="utf-8"><link rel="icon" href="data:,"><style>html,body{margin:0;background:#000}canvas{display:block}</style>
+<script src="pkg.js"></script></head><body><canvas id="c"></canvas>
+<script>
+// street-crowd（街头混入）：照参考片街头那一段逐帧临摹得到。实拍街景（静图或真人走动底片）里混进一群平面小怪：
+// 镜头慢慢横移 → 大怪从楼后探出来（只在天空里露出来）、眨眼 → 几只小怪跟着行人往深处走（走远变小、每步颠一下）
+// → 小配角钉在场景里浮着 / 点头 → 最后落款。坐标全部是底图像素（场景坐标），镜头是底图上的一个取景框。
+const P = window.PKG, [W, H] = P.size || [1920, 1080], FPS = P.fps || 24;
+const cv = document.getElementById('c'); cv.width = W; cv.height = H; const ctx = cv.getContext('2d');
+const off = document.createElement('canvas'); off.width = W; off.height = H; const oc = off.getContext('2d');
+const clamp = (x, a = 0, b = 1) => Math.max(a, Math.min(b, x)), seg = (t, a, b) => clamp((t - a) / (b - a)), lerp = (a, b, u) => a + (b - a) * u;
+const EASE = { linear: u => u, smooth: u => u * u * (3 - 2 * u), 'ease-out': u => 1 - (1 - u) ** 3, 'ease-in': u => u * u * u };
+const load = s => new Promise((r, j) => { const i = new Image(); i.onload = () => r(i); i.onerror = () => j(new Error('读不到图片：' + s)); i.src = s; });
+const ACT = P.actors || [], TT = P.title;
+const DUR = P.duration || Math.max(TT ? (TT.at || 1.2) + (TT.hold || 1.2) : 0, P.plateN ? P.plateN / (P.plateFps || FPS) : 0, 2);
+let BG, SKY, NEAR, SEQ = [], PP = [], IM = {};                    // NEAR：近处遮挡（mm occluder）；PP：逐帧行人遮罩（mm plate），大怪都画在它们后面
+// 镜头：底图上的取景框 [x, y, 宽]，高按画面比例；from → to 匀速（原片每帧约 1.33px / 1920 宽，不推不摇）
+function cam(t) {
+  const fit = () => { const w = Math.min(BG.width, BG.height * W / H); return [(BG.width - w) / 2, (BG.height - w * H / W) / 2, w]; };
+  const c = P.camera || {}, a = c.from || fit(), b = c.to || a, t0 = c.at || 0, u = (EASE[c.ease || 'linear'])(seg(t, t0, t0 + (c.dur || DUR - t0)));
+  return [lerp(a[0], b[0], u), lerp(a[1], b[1], u), lerp(a[2], b[2], u)];
+}
+// 取景框按「这张图 ÷ 底图」的尺寸比例换算：遮罩、底片帧和底图宽高比例一样（只是大小不同，比如 near.png 用原图算的）也能自动对齐；
+// 比例不一样就对不齐，__precheck 会拦下来
+function crop(im, cx, cy, cw) { const kx = im.width / BG.width, ky = im.height / BG.height; return [cx * kx, cy * ky, cw * kx, cw * H / W * ky]; }
+function spr(c, im, x, y, h, { ax = 0.5, ay = 1, rot = 0, sx = 1, sy = 1, flip = false } = {}) {
+  const k = h / im.height; c.save(); c.translate(x, y); c.rotate(rot); c.scale(k * sx * (flip ? -1 : 1), k * sy); c.drawImage(im, -im.width * ax, -im.height * ay); c.restore();
+}
+function shadow(x, y, w, c = ctx) { c.save(); c.fillStyle = 'rgba(20,15,10,0.28)'; c.filter = `blur(${Math.max(2, w * 0.06)}px)`; c.beginPath(); c.ellipse(x, y, w, w * 0.18, 0, 0, 7); c.fill(); c.restore(); }
+const eyes = e => Array.isArray(e[0]) ? e : [e];               // blink.eye 可以是一只 [x,y,r] 或几只 [[x,y,r], …]
+function lidColor(im, e) {
+  const [ex, ey, er] = eyes(e)[0];          // 眼皮颜色 = 眼睛正上方一圈毛的中值色
+  const c = document.createElement('canvas'); c.width = im.width; c.height = im.height; const g = c.getContext('2d'); g.drawImage(im, 0, 0);
+  const d = g.getImageData(Math.max(0, ex - er), Math.max(0, ey - er * 1.6), er * 2, er * 0.45).data, px = [];
+  for (let i = 0; i < d.length; i += 4) if (d[i + 3] > 240) px.push([d[i], d[i + 1], d[i + 2]]);
+  if (!px.length) return '#000';
+  const med = k => px.map(p => p[k]).sort((a, b) => a - b)[px.length >> 1]; return `rgb(${med(0)},${med(1)},${med(2)})`;
+}
+function actor(c, a, t, toS, k) {             // 不走路的角色：大怪（behind）、浮着的、点头的、站着的
+  const im = IM[a.img]; let mx = 0, my = 0, rot = 0, sy = 1;      // mx, my：enter / exit 的位移（接触影子跟着它走）
+  if (a.enter) { const e = a.enter, u = EASE[e.ease || 'ease-out'](seg(t, e.at || 0, (e.at || 0) + (e.dur || 0.55))); mx += (e.from[0] || 0) * (1 - u); my += (e.from[1] || 0) * (1 - u); }
+  if (a.exit) { const e = a.exit; if (t >= e.at + (e.dur || 0.45)) return;              // 缩回去 / 退场：相对位移，先慢后快；退完就不再画
+    const u = EASE[e.ease || 'ease-in'](seg(t, e.at, e.at + (e.dur || 0.45))); mx += (e.to[0] || 0) * u; my += (e.to[1] || 0) * u; }
+  let x = a.x + mx, y = a.y + my;
+  if (a.sway) rot += a.sway * Math.sin(t * 4.2 + (a.phase || 0));
+  const idle = a.idle || 'none', ph = a.phase || 0;
+  if (idle === 'float') { y += (a.amp ?? 9) * Math.sin(t * 4.5 + ph); rot += 0.08 * Math.sin(t * 3.3 + ph); }
+  if (idle === 'nod') { const n = Math.max(0, Math.sin(t * 7 + ph)); rot += -0.12 * n * (a.flip ? -1 : 1); sy = 1 - 0.04 * n; }
+  let pop = 1;                                   // appear（不推荐：出场要有来由，别拿它填空档）：到点弹出来（0 → 1.16 → 1，0.28 秒），之前不显示
+  if (a.appear != null) { const at = a.appear.at ?? a.appear, u = seg(t, at, at + 0.28); if (u <= 0) return; pop = u < 0.6 ? 1.16 * EASE['ease-out'](u / 0.6) : 1.16 - 0.16 * EASE.smooth((u - 0.6) / 0.4); }
+  const [sx_, sy_] = toS(x, y), h = a.h * k, [ax, ay] = a.anchor || (idle === 'float' ? [0.5, 0.5] : [0.5, 1]);
+  if (a.behind !== true && idle !== 'float' && a.shadow !== false && ay >= 0.95) { const [gx, gy] = toS(a.x + mx, a.y + my); shadow(gx, gy - 2, h * 0.3 * pop, c); }   // 站在地上的都给接触影子（跟着 enter / exit 走）
+  const s = h / im.height * pop; c.save(); c.translate(sx_, sy_); c.rotate(rot); c.scale(s * (a.flip ? -1 : 1), s * sy); c.translate(-im.width * ax, -im.height * ay);
+  c.drawImage(im, 0, 0);
+  if (a.blink) for (const [ex, ey, er] of eyes(a.blink.eye)) {   // 眨眼：在每只眼睛圆里用毛色从上往下盖一层眼皮再抬起（0.18 秒）
+    for (const bt of [].concat(a.blink.at ?? [1.1])) { const b = seg(t, bt, bt + 0.18), lid = b < 0.5 ? b * 2 : 2 - b * 2;
+      if (lid > 0) { const hh = (2 * er + 10) * lid; c.save(); c.beginPath(); c.arc(ex, ey, er + 3, 0, 7); c.clip();
+        c.fillStyle = a._lid; c.fillRect(ex - er - 5, ey - er - 5, 2 * er + 10, hh);
+        c.strokeStyle = 'rgba(0,0,0,0.45)'; c.lineWidth = er * 0.09; c.beginPath(); c.moveTo(ex - er, ey - er - 5 + hh); c.lineTo(ex + er, ey - er - 5 + hh); c.stroke(); c.restore(); } }
+  }
+  c.restore();
+}
+// 走路：at → until 从 from 走到 to（位置和身高一起插值 = 走远变小）。走到以后：after = "stop" 站住（换回第 1 张、不再颠），
+// "exit" 按 from→to 的方向和速度继续走：往深处走的越走越小、不会离开画面，身高缩到 to 的 40% 以下就不画了（脚步声也停）；
+// 要它走出画面，就让 to 指向画面边（默认 stop；until 不写就是走满整段）
+function walkState(a, t) {
+  const t0 = a.at || 0, t1 = a.until ?? DUR; if (t < t0) return null;
+  const st = t * FPS / (a.step || 3) + (a.phase || 0), base = { a, f: Math.floor(st) % a.walk.length, ph: st * Math.PI / 2, stopped: false };
+  let u = (t - t0) / Math.max(1e-6, t1 - t0);
+  if (u > 1) { if ((a.after || 'stop') === 'stop') return { ...base, x: a.to[0], y: a.to[1], h: a.to[2], f: 0, stopped: true };
+    if (lerp(a.from[2], a.to[2], u) < 0.4 * a.to[2]) return null; }      // exit 往深处走：缩到 to 身高的 40% 以下就算走远了，不再画
+  else u = Math.max(0, u);
+  return { ...base, x: lerp(a.from[0], a.to[0], u), y: lerp(a.from[1], a.to[1], u), h: Math.max(1, lerp(a.from[2], a.to[2], u)) };
+}
+function walkOn(a, t) {                          // 这一刻走路的角色在不在画面里（空档检查、脚步声用）
+  const w = walkState(a, t), [cx, cy, cw] = cam(t), k = W / cw;
+  return !!w && (w.x - cx) * k > -40 && (w.x - cx) * k < W + 40 && (w.y - cy) * k > 0 && (w.y - w.h - cy) * k < H;
+}
+function render(t) {
+  const [cx, cy, cw] = cam(t), k = W / cw, toS = (x, y) => [(x - cx) * k, (y - cy) * k];
+  const bg = SEQ.length ? SEQ[Math.min(SEQ.length - 1, Math.floor(t * (P.plateFps || FPS) + 1e-6))] : BG;
+  ctx.drawImage(bg, ...crop(bg, cx, cy, cw), 0, 0, W, H);
+  // ① 楼后面的（behind）：先画到离屏，再扣掉挡在它前面的东西——有 near（近处遮挡层）就扣掉近处的楼、树、灯杆，
+  //    大怪能站在远处街上、从近处楼侧面探出来（原片的做法）；没有 near 就只留天空（只露在天空里）。再扣掉这一帧走过的行人
+  const src = (im) => oc.drawImage(im, ...crop(im, cx, cy, cw), 0, 0, W, H);
+  const pp = PP.length ? PP[Math.min(PP.length - 1, Math.floor(t * (P.plateFps || FPS) + 1e-6))] : null;
+  const back = ACT.filter(a => a.behind === true && !a.walk);
+  if (back.length) { oc.clearRect(0, 0, W, H); back.forEach(a => actor(oc, a, t, toS, k));
+    if (NEAR) { oc.globalCompositeOperation = 'destination-out'; src(NEAR); }
+    else if (SKY) { oc.globalCompositeOperation = 'destination-in'; src(SKY); }
+    if (pp) { oc.globalCompositeOperation = 'destination-out'; src(pp); }
+    oc.globalCompositeOperation = 'source-over'; ctx.drawImage(off, 0, 0); }
+  // ①b 比行人远的配角（behind: "people"，比如站在对面人行道上的）：只被走过的行人挡住，不会画到人身上
+  const farA = ACT.filter(a => a.behind === 'people' && !a.walk);
+  if (farA.length) { oc.clearRect(0, 0, W, H); farA.forEach(a => actor(oc, a, t, toS, k));
+    if (pp) { oc.globalCompositeOperation = 'destination-out'; src(pp); oc.globalCompositeOperation = 'source-over'; }
+    ctx.drawImage(off, 0, 0); }
+  // ② 钉在场景里的配角
+  ACT.filter(a => !a.behind && !a.walk).forEach(a => actor(ctx, a, t, toS, k));
+  // ③ 走路的：起点 → 终点（脚底位置和身高一起插值 = 走远变小），4 张图每张 step 帧；每步落地压扁、腾起拉长、往迈步那侧歪
+  const ws = ACT.filter(a => a.walk).map(a => walkState(a, t)).filter(Boolean);
+  ws.sort((p, q) => p.y - q.y);
+  for (const w of ws) {
+    const air = w.stopped ? 0 : Math.abs(Math.sin(w.ph)), bob = air * w.h * (w.a.bob ?? 0.06), sq = w.stopped ? 1 : 1 + (w.a.squash ?? 0.07) * (air - 0.5);
+    const [sx_, sy_] = toS(w.x, w.y), h = w.h * k;
+    if (w.a.shadow !== false) shadow(sx_, sy_ - 2, h * 0.26 * (1 - air * 0.15));
+    spr(ctx, IM[w.a.walk[w.f]], sx_, sy_ - bob * k, h, { rot: w.stopped ? 0 : (w.a.sway ?? 0.09) * Math.sin(w.ph / 2), sy: sq, sx: 2 - sq, flip: w.a.flip });
+  }
+  // ④ 落款：画面坐标（pos 是画面比例），每行错开 0.1 秒弹出，过冲 16%
+  if (TT) {
+    const lines = TT.img ? [null] : [].concat(TT.text), at = TT.at ?? DUR - (TT.hold || 1.2);
+    lines.forEach((ln, i) => {
+      const u = seg(t, at + i * 0.1, at + i * 0.1 + 0.28); if (u <= 0) return;
+      const s = u < 0.6 ? 1.16 * EASE['ease-out'](u / 0.6) : 1.16 - 0.16 * EASE.smooth((u - 0.6) / 0.4);
+      const [px, py] = TT.pos || [0.5, 0.2], size = (TT.size || 0.11) * H * (i ? (TT.small || 0.42) : 1), y0 = py * H + i * (TT.size || 0.11) * H * 0.95;
+      ctx.save(); ctx.translate(px * W, y0); ctx.scale(s, s);
+      if (TT.img) { const im = IM[TT.img]; ctx.shadowColor = 'rgba(0,0,0,0.3)'; ctx.shadowBlur = 18; spr(ctx, im, 0, 0, size, { ay: 0.5 }); }
+      else { ctx.font = `${TT.weight || 800} ${size}px ${TT.font || '"Futura", "Avenir Next", sans-serif'}`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.shadowColor = 'rgba(0,0,0,0.35)'; ctx.shadowBlur = size * 0.18; ctx.shadowOffsetY = size * 0.04; ctx.fillStyle = TT.color || '#ffffff'; ctx.fillText(ln, 0, 0); }
+      ctx.restore();
+    });
+  }
+}
+const files = new Set([P.base, ...ACT.flatMap(a => a.walk || [a.img]), ...(TT && TT.img ? [TT.img] : [])]);
+Promise.all([...[...files].map(f => load(f).then(i => IM[f] = i)), P.sky ? load(P.sky).then(i => SKY = i) : 0,
+  ...Array.from({ length: P.plateN || 0 }, (_, i) => load(`${P.plate.replace(/\/?$/, '/')}f_${String(i).padStart(3, '0')}.jpg`).then(im => SEQ[i] = im)),
+  P.near ? load(P.near).then(i => NEAR = i) : 0,
+  ...Array.from({ length: P.platePeople ? P.plateN : 0 }, (_, i) => load(`${P.plate.replace(/\/?$/, '/')}p_${String(i).padStart(3, '0')}.png`).then(im => PP[i] = im))])
+  .then(() => { BG = IM[P.base]; ACT.forEach(a => { if (a.blink) a._lid = a.blink.color || lidColor(IM[a.img], a.blink.eye); });
+    if (!window.__precheck().length) render(0); window.__ready = true; })      // 渲染前检查没过就先不画（mm package 会把检查结果用中文报出来）
+  .catch(e => { document.title = 'ERROR ' + e.message; window.__error = e.message; window.__ready = true; });
+window.__render = t => render(t); window.__duration = DUR;
+// 自检（mm package 自动出 3 张）：天空染青（behind 的角色只会出现在这里）、每个角色和落款画框、重叠就提醒
+window.__check = t => {
+  render(t); const [cx, cy, cw] = cam(t), k = W / cw, toS = (x, y) => [(x - cx) * k, (y - cy) * k], boxes = [], warns = [];
+  const tint = (im, col) => { oc.clearRect(0, 0, W, H); oc.fillStyle = col; oc.fillRect(0, 0, W, H); oc.globalCompositeOperation = 'destination-in';
+    oc.drawImage(im, ...crop(im, cx, cy, cw), 0, 0, W, H); oc.globalCompositeOperation = 'source-over'; ctx.drawImage(off, 0, 0); };
+  if (NEAR) tint(NEAR, 'rgba(255,60,200,0.30)'); else if (SKY) tint(SKY, 'rgba(0,220,255,0.35)');   // 粉 = 近处遮挡，青 = 天空
+  ACT.forEach((a, i) => {
+    let x = a.x, y = a.y, h = a.h, im = IM[a.img || a.walk[0]];
+    if (a.walk) { const w = walkState(a, t); if (!w) return; x = w.x; y = w.y; h = w.h; }
+    if (a.enter) { const e = a.enter, u = EASE[e.ease || 'ease-out'](seg(t, e.at || 0, (e.at || 0) + (e.dur || 0.55))); x += (e.from[0] || 0) * (1 - u); y += (e.from[1] || 0) * (1 - u); }
+    if (a.exit) { const e = a.exit; if (t >= e.at + (e.dur || 0.45)) return; const u = EASE[e.ease || 'ease-in'](seg(t, e.at, e.at + (e.dur || 0.45))); x += (e.to[0] || 0) * u; y += (e.to[1] || 0) * u; }
+    if (a.appear != null && t < (a.appear.at ?? a.appear)) return;
+    const [ax, ay] = a.anchor || (a.idle === 'float' ? [0.5, 0.5] : [0.5, 1]), wv = h * im.width / im.height, [px, py] = toS(x, y);
+    const b = [px - wv * ax * k, py - h * ay * k, px + wv * (1 - ax) * k, py + h * (1 - ay) * k];
+    boxes.push({ name: (a.img || a.walk[0]).split('/').pop().replace(/\.\w+$/, '') + (a.behind === true ? '（楼后）' : a.behind === 'people' ? '（人后）' : a.walk ? '（走）' : ''), b, a });
+  });
+  if (TT) { const at = TT.at ?? DUR - (TT.hold || 1.2); if (t >= at) { const [px, py] = TT.pos || [0.5, 0.2], sz = (TT.size || 0.11) * H, nl = TT.img ? 1 : [].concat(TT.text).length;
+    let wv = sz * 4; if (!TT.img) { ctx.font = `${TT.weight || 800} ${sz}px ${TT.font || '"Futura", "Avenir Next", sans-serif'}`; wv = ctx.measureText([].concat(TT.text)[0]).width; }
+    else { const im = IM[TT.img]; wv = sz * im.width / im.height; }
+    boxes.push({ name: '落款', b: [px * W - wv / 2, py * H - sz / 2, px * W + wv / 2, py * H + sz / 2 + (nl - 1) * sz * 0.95], title: true }); } }
+  const ov = (p, q) => Math.max(0, Math.min(p[2], q[2]) - Math.max(p[0], q[0])) * Math.max(0, Math.min(p[3], q[3]) - Math.max(p[1], q[1])), area = p => (p[2] - p[0]) * (p[3] - p[1]);
+  for (let i = 0; i < boxes.length; i++) for (let j = i + 1; j < boxes.length; j++) {
+    const p = boxes[i], q = boxes[j], o = ov(p.b, q.b) / Math.min(area(p.b), area(q.b));
+    if ((p.title || q.title) && o > 0.08) warns.push(`落款压在「${p.title ? q.name : p.name}」上（重叠 ${Math.round(o * 100)}%）`);
+    else if (p.a && q.a && p.a.walk && q.a.walk && o > 0.25) warns.push(`「${p.name}」和「${q.name}」挤在一起（重叠 ${Math.round(o * 100)}%）`);
+  }
+  const entering = a => a.enter && t < (a.enter.at || 0) + (a.enter.dur || 0.55), exiting = a => a.exit && t >= a.exit.at;   // 正在探出 / 缩回的不算
+  for (const p of boxes) { if (p.b[2] < 0 || p.b[0] > W || p.b[3] < 0 || p.b[1] > H) if (!p.a || !(p.a.enter || exiting(p.a))) warns.push(`「${p.name}」在画面外`);
+    // 只查 behind: true（藏在楼后）的；behind: "people" 只被行人挡，不查
+    if (p.a && p.a.behind === true && !p.a.walk && (NEAR || SKY) && !entering(p.a) && !exiting(p.a)) { const g = document.createElement('canvas'); g.width = 64; g.height = 64; const gc = g.getContext('2d');
+      const [bx0, by0] = [cx + p.b[0] / k, cy + p.b[1] / k], bw = (p.b[2] - p.b[0]) / k, bh = (p.b[3] - p.b[1]) / k, M = NEAR || SKY, kx = M.width / BG.width, ky = M.height / BG.height;
+      gc.drawImage(M, bx0 * kx, by0 * ky, bw * kx, bh * 0.45 * ky, 0, 0, 64, 64); const d = gc.getImageData(0, 0, 64, 64).data; let s = 0; for (let q = 3; q < d.length; q += 4) s += d[q] / 255;
+      const vis = NEAR ? 1 - s / 4096 : s / 4096;           // 上半身有多少露在外面（near：没被近处挡住；sky：在天空里）
+      if (vis < 0.5) warns.push(`「${p.name}」上半身只露出 ${Math.round(vis * 100)}%，脸可能被${NEAR ? '近处的楼、树' : '楼'}挡住，看 ${NEAR ? 'near_check' : 'sky_check'}`); } }
+  ctx.save(); ctx.lineWidth = 4; ctx.font = '600 26px sans-serif';
+  for (const p of boxes) { ctx.strokeStyle = p.title ? '#ffe14d' : p.a && p.a.behind === true ? '#ff4fd8' : p.a && p.a.walk ? '#4fff8a' : '#ffffff';
+    ctx.strokeRect(p.b[0], p.b[1], p.b[2] - p.b[0], p.b[3] - p.b[1]); ctx.fillStyle = ctx.strokeStyle; ctx.fillText(p.name, p.b[0] + 6, Math.max(26, p.b[1] - 8)); }
+  ctx.restore();
+  return { img: cv.toDataURL('image/jpeg', 0.9), warns };
+};
+// 看得见的新事件（mm package 用来提醒「X–Y 秒没有新事件」）：持续走路不算，走进画面 / 走出画面 / 站住才算
+window.__beats = () => {
+  const b = [], c = P.camera || {};
+  if (c.from && c.to && (c.from[0] !== c.to[0] || c.from[1] !== c.to[1] || c.from[2] !== c.to[2])) b.push(c.at || 0);
+  for (const a of ACT) {
+    if (a.enter) b.push(a.enter.at || 0, (a.enter.at || 0) + (a.enter.dur || 0.55));
+    if (a.exit) b.push(a.exit.at, a.exit.at + (a.exit.dur || 0.45));
+    if (a.blink) b.push(...[].concat(a.blink.at ?? [1.1]));
+    // appear（凭空弹出来）不算：出场要有来由，不推荐用它填空档
+    if (a.walk) { if ((a.at || 0) > 0) b.push(a.at); if (a.until != null && a.until < DUR) b.push(a.until);
+      let was = null; for (let t = 0; t <= DUR; t += 1 / FPS) { const on = walkOn(a, t);
+        if (was !== null && on !== was) b.push(t); was = on; } }
+  }
+  let quiet = null;                                  // 落款出完以后是停留时间，不算空档
+  if (TT) { const at = TT.at ?? DUR - (TT.hold || 1.2), nl = [].concat(TT.img ? [0] : TT.text).length; for (let i = 0; i < nl; i++) b.push(at + i * 0.1); quiet = at + (nl - 1) * 0.1; }
+  return { beats: b, quietFrom: quiet };
+};
+// 渲染前检查：镜头框不能出底图（出了会留拖影）、时长不能超过底片、遮罩和底图比例要一样、楼后的角色要有遮罩、走路的 from/to/until 要写对
+window.__precheck = () => {
+  const e = [], c = P.camera || {};
+  for (const [nm, f] of [['from', c.from], ['to', c.to]]) if (f) { const [x, y, w] = f, h = w * H / W;
+    if (x < -1 || y < -1 || x + w > BG.width + 1 || y + h > BG.height + 1) e.push(`camera.${nm} [${f}] 超出底图（${BG.width}×${BG.height}）：取景框高 = 宽 × ${H}/${W} = ${Math.round(h)}`); }
+  if (P.plateN && DUR > P.plateN / (P.plateFps || FPS) + 0.05) e.push(`时长 ${DUR}s 超过底片 ${(P.plateN / (P.plateFps || FPS)).toFixed(2)}s（人会定住）：缩短 duration 或出更长的底片`);
+  // 遮罩、底片帧要和底图宽高比例一样（大小可以不同，会自动换算）；比例不一样会错位
+  const ar = im => im.width / im.height, bar = ar(BG);
+  for (const [nm, im, how] of [[P.near, NEAR, `先跑 mm plate 生成 ${P.base}，再用 mm occluder 空街景 去近景图 --target ${P.base} 重做 ${P.near}`],
+    [P.sky, SKY, `重新跑 mm sky ${P.base}（用了底片的话，mm plate 会一起写出 sky.png）`],
+    ['底片帧 f_000.jpg', SEQ[0], `${P.base} 和底片要来自同一次 mm plate：重新跑一次 mm plate`],
+    ['行人遮罩 p_000.png', PP[0], `重新跑一次 mm plate`]])
+    if (im && Math.abs(ar(im) / bar - 1) > 0.01) e.push(`${nm} 是 ${im.width}×${im.height}，底图 ${P.base} 是 ${BG.width}×${BG.height}，宽高比例对不上，画上去会错位：${how}`);
+  const back = ACT.filter(a => a.behind === true && !a.walk);
+  if (back.length && !NEAR && !SKY) e.push(`「${back.map(a => String(a.img).split('/').pop()).join('、')}」写了 behind: true（藏在楼后），可是没有 near.png 也没有 sky.png，它会整个露在楼前面：用 mm occluder 做近处遮挡、或 mm sky 底图做天空遮罩（mm plate 会一起写出 sky.png），再在 package.json 里写上 "near" 或 "sky"；不用藏就把 behind 删掉`);
+  ACT.forEach((a, i) => { if (!a.walk) return; const nm = `走路的「${String([].concat(a.walk)[0]).split('/').pop()}」（actors 第 ${i + 1} 个）`;
+    for (const key of ['from', 'to']) if (!Array.isArray(a[key]) || a[key].length !== 3 || a[key].some(v => typeof v !== 'number' || !isFinite(v)))
+      e.push(`${nm} 的 ${key} 要写 3 个数 [脚底 x, 脚底 y, 身高]，现在是 ${JSON.stringify(a[key] ?? null)}`);
+    if (a.until != null && a.until <= (a.at || 0)) e.push(`${nm} 的 until（${a.until}）要比 at（${a.at || 0}）晚：until 是「走到 to 的那一刻」，不是「走多久」。比如从 ${a.at || 0} 秒开始走 1.2 秒，就写 until ${+((a.at || 0) + 1.2).toFixed(2)}`); });
+  return e;
+};
+// 音效：大怪探出 whoosh、走路的每步一声轻脚步、落款 pop
+window.__events = () => [
+  ...ACT.filter(a => a.enter).map(a => ({ t: a.enter.at || 0, kind: 'whoosh', dur: 0.45, gain: 0.35 })),
+  ...ACT.filter(a => a.exit).map(a => ({ t: a.exit.at, kind: 'whoosh', dur: 0.4, gain: 0.3 })),
+  ...ACT.filter(a => a.walk).flatMap(a => { const ev = [], per = 2 * (a.step || 3) / FPS, ex = a.after === 'exit', end = ex ? DUR : (a.until ?? DUR);
+    for (let t = (a.at || 0) + per / 2; t < end; t += per) { if (ex && t > (a.until ?? DUR) && !walkOn(a, t)) break;   // exit：走远（缩没了）或走出画面，脚步声就停
+      ev.push({ t, kind: 'step', gain: 0.15 }); } return ev; }),
+  ...ACT.filter(a => a.appear != null).map((a, i) => ({ t: a.appear.at ?? a.appear, kind: 'pop', pitch: 1.2 + 0.1 * (i % 3), gain: 0.35 })),
+  ...(TT ? [].concat(TT.img ? [0] : TT.text).map((_, i) => ({ t: (TT.at ?? DUR - (TT.hold || 1.2)) + i * 0.1, kind: 'pop', pitch: 1 + i * 0.1, gain: 0.55 })) : []),
+];
+</script></body></html>

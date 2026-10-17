@@ -1,0 +1,79 @@
+{
+ "base": "bg1.png",
+ "bases": [
+  "bg1.png",
+  "bg2.png",
+  "bg3.png",
+  "bg4.png",
+  "bg5.png"
+ ],
+ "baseHold": 6,
+ "duration": 6.0,
+ "camera": {
+  "push": 0.03,
+  "drift": 0.0,
+  "punch": false
+ },
+ "grain": 0,
+ "graphics": [
+  {
+   "art": "pose1.png",
+   "surface": {
+    "quad": "TODO 整幅画面的四个角 [[0,0],[W,0],[W,H],[0,H]]（W、H 是底图缩到 1080 宽后的尺寸）"
+   },
+   "place": {
+    "width": 1.0,
+    "height": 1.0,
+    "anchor": [
+     0.5,
+     0.5
+    ],
+    "fit": "art"
+   },
+   "look": {
+    "shade": 0.0,
+    "soften": 0.0,
+    "boil": 0.0,
+    "clip": false
+   },
+   "rig": {
+    "enter": {
+     "motion": "static",
+     "at": 0,
+     "idle": "none"
+    },
+    "parts": {
+     "pose1": {
+      "png": "pose1.png"
+     },
+     "pose2": {
+      "png": "pose2.png"
+     },
+     "pose3": {
+      "png": "pose3.png"
+     },
+     "pose4": {
+      "png": "pose4.png"
+     },
+     "pose5": {
+      "png": "pose5.png"
+     }
+    },
+    "acts": [
+     {
+      "do": "cycle",
+      "parts": [
+       "pose1",
+       "pose2",
+       "pose3",
+       "pose4",
+       "pose5"
+      ],
+      "from": 0,
+      "frames": 6
+     }
+    ]
+   }
+  }
+ ]
+}

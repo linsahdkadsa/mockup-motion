@@ -1,0 +1,298 @@
+{
+ "base": "base.png",
+ "duration": 4.0,
+ "camera": {
+  "push": 0.04,
+  "drift": 0.4
+ },
+ "graphics": [
+  {
+   "art": "splash.png",
+   "surface": {
+    "quad": "TODO 表面四角 [[左上],[右上],[右下],[左下]]；整面玻璃就写整幅画面的四个角"
+   },
+   "place": {
+    "width": 0.8,
+    "height": 0.64,
+    "anchor": [
+     0.5,
+     0.5
+    ]
+   },
+   "look": {
+    "shade": 0.0,
+    "soften": 0.2,
+    "boil": 0.0,
+    "clip": false
+   },
+   "groups": [
+    {
+     "name": "splash",
+     "box": "rest",
+     "motion": "draw",
+     "seed": [
+      606,
+      140
+     ],
+     "at": 0.5,
+     "dur": 1.8,
+     "ease": "ease-out",
+     "idle": "none"
+    }
+   ]
+  },
+  {
+   "art": "product.png",
+   "surface": {
+    "quad": "TODO 表面四角 [[左上],[右上],[右下],[左下]]；整面玻璃就写整幅画面的四个角"
+   },
+   "place": {
+    "width": 0.25,
+    "height": 0.6,
+    "anchor": [
+     0.5,
+     0.55
+    ]
+   },
+   "look": {
+    "shade": 0.0,
+    "soften": 0.0,
+    "boil": 0.0,
+    "clip": false
+   },
+   "rig": {
+    "enter": {
+     "motion": "drop",
+     "at": 0.28,
+     "dur": 0.4,
+     "fallFrac": 0.3,
+     "fall": 1.1,
+     "spin": 0.15,
+     "squash": 0.12,
+     "idle": "none",
+     "dust": false
+    },
+    "parts": {
+     "root": {
+      "virtual": true,
+      "pivot_frac": [
+       0.5,
+       0.88
+      ]
+     },
+     "cup": {
+      "png": "product.png",
+      "parent": "root"
+     }
+    },
+    "acts": [
+     {
+      "do": "rotate",
+      "part": "root",
+      "keys": [
+       [
+        0.4,
+        0
+       ],
+       [
+        0.5,
+        -13
+       ],
+       [
+        0.8,
+        -9
+       ],
+       [
+        1.1,
+        -3
+       ],
+       [
+        1.4,
+        0
+       ]
+      ]
+     },
+     {
+      "do": "bob",
+      "part": "root",
+      "from": 1.6,
+      "amp_px": 4,
+      "period": 1.4
+     }
+    ]
+   }
+  },
+  {
+   "art": "dots.png",
+   "surface": {
+    "quad": "TODO 表面四角 [[左上],[右上],[右下],[左下]]；整面玻璃就写整幅画面的四个角"
+   },
+   "place": {
+    "width": 0.07,
+    "height": 0.04,
+    "anchor": [
+     0.36,
+     0.66
+    ]
+   },
+   "look": {
+    "shade": 0.0,
+    "soften": 0.2,
+    "clip": false
+   },
+   "rig": {
+    "enter": {
+     "motion": "popin",
+     "at": 2.34,
+     "dur": 0.12,
+     "idle": "none"
+    },
+    "parts": {
+     "dots": {
+      "png": "dots.png"
+     }
+    },
+    "acts": [
+     {
+      "do": "show",
+      "part": "dots",
+      "keys": [
+       [
+        0,
+        1
+       ],
+       [
+        2.49,
+        1
+       ],
+       [
+        2.5,
+        0
+       ]
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "art": "logo.png",
+   "surface": {
+    "quad": "TODO 表面四角 [[左上],[右上],[右下],[左下]]；整面玻璃就写整幅画面的四个角"
+   },
+   "place": {
+    "width": 0.48,
+    "height": 0.2,
+    "anchor": [
+     0.5,
+     0.64
+    ]
+   },
+   "look": {
+    "shade": 0.0,
+    "soften": 0.2,
+    "boil": 0.1,
+    "clip": false
+   },
+   "groups": [
+    {
+     "name": "whisk",
+     "box": "rest",
+     "motion": "popin",
+     "at": 2.5,
+     "dur": 0.42,
+     "idle": "none"
+    }
+   ]
+  },
+  {
+   "text": {
+    "lines": [
+     "MANHATTAN",
+     "MORNING RITUAL"
+    ],
+    "weight": 700,
+    "color": "#ffffff",
+    "font": "\"Avenir Next\", \"Helvetica Neue\", sans-serif",
+    "sizes": [
+     1,
+     0.5
+    ],
+    "align": "left"
+   },
+   "surface": {
+    "quad": "TODO 表面四角 [[左上],[右上],[右下],[左下]]；整面玻璃就写整幅画面的四个角"
+   },
+   "place": {
+    "width": 0.17,
+    "height": 0.08,
+    "anchor": [
+     0.15,
+     0.1
+    ]
+   },
+   "look": {
+    "shade": 0.0,
+    "soften": 0.2,
+    "clip": false
+   },
+   "auto": {
+    "title": {
+     "motion": "pop",
+     "at": 0.6,
+     "step": 0.0,
+     "stagger": "even"
+    },
+    "small": {
+     "motion": "type",
+     "at": 1.1,
+     "step": 0.03
+    }
+   }
+  },
+  {
+   "text": {
+    "lines": [
+     "@WHISK.NYC",
+     "HTTPS://WWW.WHISKMATCHA.COM",
+     "+1 (212) 555-0198"
+    ],
+    "weight": 600,
+    "color": "#ffffff",
+    "font": "\"Avenir Next\", \"Helvetica Neue\", sans-serif",
+    "sizes": [
+     1,
+     1,
+     1
+    ]
+   },
+   "surface": {
+    "quad": "TODO 表面四角 [[左上],[右上],[右下],[左下]]；整面玻璃就写整幅画面的四个角"
+   },
+   "place": {
+    "width": 0.2,
+    "height": 0.09,
+    "anchor": [
+     0.5,
+     0.87
+    ]
+   },
+   "look": {
+    "shade": 0.0,
+    "soften": 0.2,
+    "clip": false
+   },
+   "auto": {
+    "title": {
+     "motion": "type",
+     "at": 2.65,
+     "step": 0.012
+    },
+    "small": {
+     "motion": "type",
+     "at": 2.75,
+     "step": 0.012
+    }
+   }
+  }
+ ]
+}

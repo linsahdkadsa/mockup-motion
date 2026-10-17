@@ -1,0 +1,202 @@
+{
+ "base": "base.png",
+ "duration": 5.0,
+ "camera": {
+  "push": 0.04,
+  "drift": 0.6
+ },
+ "graphics": [
+  {
+   "surface": {
+    "seed": "TODO 表面空白处的一个点 [x,y]，或者改成 quad"
+   },
+   "place": {
+    "width": 0.95,
+    "height": 1.2,
+    "anchor": [
+     0.5,
+     0.76
+    ]
+   },
+   "look": {
+    "shade": 0.25,
+    "soften": 0.7,
+    "boil": 0.4
+   },
+   "rig": {
+    "enter": {
+     "motion": "peek",
+     "from": "bottom",
+     "clip": "none",
+     "at": 0.35,
+     "rise": 0.58,
+     "riseDur": 0.6,
+     "hold": 0.93,
+     "popDur": 0.11,
+     "overshoot": 0.16,
+     "idle": "none"
+    },
+    "parts": {
+     "root": {
+      "virtual": true,
+      "pivot_frac": [
+       0.5,
+       0.9
+      ]
+     },
+     "look_l": {
+      "png": "look_l.jpg",
+      "parent": "root"
+     },
+     "look_r": {
+      "png": "look_r.jpg",
+      "parent": "root",
+      "hidden": true
+     },
+     "cheeks": {
+      "png": "cheeks.jpg",
+      "parent": "root",
+      "hidden": true
+     },
+     "mid_hands": {
+      "png": "mid_hands.jpg",
+      "parent": "root",
+      "hidden": true
+     }
+    },
+    "acts": [
+     {
+      "do": "show",
+      "part": "look_l",
+      "keys": [
+       [
+        1.08,
+        1
+       ],
+       [
+        1.1,
+        0
+       ],
+       [
+        1.48,
+        0
+       ],
+       [
+        1.5,
+        1
+       ],
+       [
+        1.86,
+        1
+       ],
+       [
+        1.88,
+        0
+       ]
+      ]
+     },
+     {
+      "do": "show",
+      "part": "look_r",
+      "keys": [
+       [
+        1.08,
+        0
+       ],
+       [
+        1.1,
+        1
+       ],
+       [
+        1.48,
+        1
+       ],
+       [
+        1.5,
+        0
+       ]
+      ]
+     },
+     {
+      "do": "show",
+      "part": "mid_hands",
+      "keys": [
+       [
+        1.86,
+        0
+       ],
+       [
+        1.88,
+        1
+       ],
+       [
+        1.96,
+        1
+       ],
+       [
+        1.98,
+        0
+       ]
+      ]
+     },
+     {
+      "do": "show",
+      "part": "cheeks",
+      "keys": [
+       [
+        1.96,
+        0
+       ],
+       [
+        1.98,
+        1
+       ]
+      ]
+     },
+     {
+      "do": "wiggle",
+      "part": "root",
+      "amp": 4,
+      "period": 0.9,
+      "from": 2.38
+     }
+    ]
+   }
+  },
+  {
+   "art": "wordmark.png",
+   "surface": {
+    "seed": "TODO 窗户上方招牌板的一个点 [x,y]，或者改成 quad"
+   },
+   "place": {
+    "width": 0.6,
+    "height": 0.82,
+    "anchor": [
+     0.5,
+     0.52
+    ]
+   },
+   "look": {
+    "shade": 0.15,
+    "soften": 0.5
+   },
+   "auto": {
+    "title": {
+     "motion": "pop",
+     "at": 2.23,
+     "step": 0.1,
+     "stagger": "even"
+    },
+    "graphic": {
+     "motion": "pop",
+     "at": 2.23,
+     "step": 0.1
+    },
+    "small": {
+     "motion": "pop",
+     "at": 2.58
+    }
+   }
+  }
+ ]
+}

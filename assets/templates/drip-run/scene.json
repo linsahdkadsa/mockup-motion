@@ -1,0 +1,170 @@
+{
+ "base": "base.png",
+ "duration": 3.3,
+ "camera": {
+  "push": 0.04,
+  "drift": 0.6
+ },
+ "graphics": [
+  {
+   "surface": {
+    "seed": "TODO 表面空白处的一个点 [x,y]，或者改成 quad"
+   },
+   "place": {
+    "width": 0.5,
+    "height": 0.8,
+    "anchor": [
+     0.5,
+     0.58
+    ]
+   },
+   "look": {
+    "shade": 0.25,
+    "soften": 0.6,
+    "boil": 0.5
+   },
+   "rig": {
+    "enter": {
+     "motion": "drip",
+     "at": 0.38,
+     "dur": 0.6,
+     "idle": "none",
+     "dust": false
+    },
+    "parts": {
+     "root": {
+      "virtual": true,
+      "pivot_frac": [
+       0.5,
+       0.92
+      ]
+     },
+     "legs": {
+      "parent": "root",
+      "hose": {
+       "hips": [
+        [
+         0.44,
+         0.85
+        ],
+        [
+         0.56,
+         0.85
+        ]
+       ],
+       "ground": 1.13,
+       "stride": 0.11,
+       "lift": 0.1,
+       "width": 0.045,
+       "shoe": 0.16,
+       "bend": 0.08,
+       "outline": 12,
+       "from": 0.57,
+       "runFrom": 1.0,
+       "dir": 1
+      }
+     },
+     "cup": {
+      "png": "cup.jpg",
+      "parent": "root"
+     }
+    },
+    "acts": [
+     {
+      "do": "rotate",
+      "part": "root",
+      "keys": [
+       [
+        0.95,
+        0
+       ],
+       [
+        1.05,
+        5
+       ]
+      ]
+     },
+     {
+      "do": "bob",
+      "part": "root",
+      "from": 1.0,
+      "amp_px": 5,
+      "period": 0.1667
+     }
+    ]
+   }
+  },
+  {
+   "text": {
+    "lines": [
+     "IN A RUSH"
+    ],
+    "weight": 900,
+    "color": "#ffffff",
+    "font": "\"Arial Rounded MT Bold\", \"Helvetica Neue\", sans-serif",
+    "tracking": 0.02
+   },
+   "surface": {
+    "seed": "TODO 表面空白处的一个点 [x,y]，或者改成 quad"
+   },
+   "place": {
+    "width": 0.62,
+    "height": 0.14,
+    "anchor": [
+     0.5,
+     0.11
+    ]
+   },
+   "look": {
+    "shade": 0.2,
+    "soften": 0.6,
+    "boil": 0.5
+   },
+   "groups": [
+    {
+     "name": "t",
+     "box": "rest",
+     "motion": "pop",
+     "at": 1.0,
+     "step": 0.045,
+     "stagger": "even",
+     "idle": "none"
+    }
+   ]
+  },
+  {
+   "text": {
+    "lines": [
+     "COFFEE                    CORNER"
+    ],
+    "weight": 800,
+    "color": "#ffffff",
+    "font": "\"Arial Rounded MT Bold\", \"Helvetica Neue\", sans-serif"
+   },
+   "surface": {
+    "seed": "TODO 表面空白处的一个点 [x,y]，或者改成 quad"
+   },
+   "place": {
+    "width": 0.66,
+    "height": 0.04,
+    "anchor": [
+     0.5,
+     0.95
+    ]
+   },
+   "look": {
+    "shade": 0.2,
+    "soften": 0.6
+   },
+   "groups": [
+    {
+     "name": "s",
+     "box": "rest",
+     "motion": "type",
+     "at": 1.6,
+     "step": 0.025
+    }
+   ]
+  }
+ ]
+}

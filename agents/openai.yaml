@@ -1,0 +1,4 @@
+interface:
+  display_name: "样机动效 mockup-motion"
+  short_description: "实拍场景里的 2D 角色演小故事：招牌橱窗动画、街头混进真人、栏目片头。生图出场景和姿势，代码按临摹量好的节奏做动画、镜头运动、配音效。纯代码图形片、产品片用 motion-film"
+  default_prompt: "使用 $mockup-motion：先写小故事和美术指导，选桥段模板（街头混入用 street-crowd，色块片头用 color-panels），出场景和角色姿势，用代码做动画并交付 MP4；片头分镜头做，再用 mm concat 硬切拼起来。"

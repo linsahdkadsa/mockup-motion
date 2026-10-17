@@ -1,0 +1,552 @@
+{
+ "base": "base.png",
+ "duration": 3.7,
+ "camera": {
+  "push": 0.04,
+  "drift": 0.6
+ },
+ "graphics": [
+  {
+   "surface": {
+    "seed": "TODO 表面空白处的一个点 [x,y]，或者改成 quad"
+   },
+   "place": {
+    "width": 0.55,
+    "height": 0.86,
+    "anchor": [
+     0.36,
+     0.55
+    ],
+    "fit": "art"
+   },
+   "look": {
+    "shade": 0.15,
+    "soften": 0.6,
+    "boil": 0.5,
+    "clip": false
+   },
+   "rig": {
+    "enter": {
+     "motion": "drop",
+     "at": -0.25,
+     "dur": 0.6,
+     "fallFrac": 0.55,
+     "fall": 0.6,
+     "dx0": -0.3,
+     "spin": 0,
+     "idle": "none"
+    },
+    "parts": {
+     "root": {
+      "virtual": true,
+      "pivot_frac": [
+       0.27,
+       0.95
+      ]
+     },
+     "jump": {
+      "png": "L_jump.png",
+      "parent": "root"
+     },
+     "squat": {
+      "png": "L_squat.png",
+      "parent": "root"
+     },
+     "mid_rise": {
+      "png": "L_mid_rise.png",
+      "parent": "root"
+     },
+     "stand": {
+      "png": "L_stand.png",
+      "parent": "root"
+     },
+     "shock": {
+      "png": "L_shock.png",
+      "parent": "root"
+     },
+     "mid_calm": {
+      "png": "L_mid_calm.png",
+      "parent": "root"
+     },
+     "chat": {
+      "png": "L_chat.png",
+      "parent": "root"
+     },
+     "laugh": {
+      "png": "L_laugh.png",
+      "parent": "root"
+     }
+    },
+    "acts": [
+     {
+      "do": "show",
+      "part": "jump",
+      "keys": [
+       [
+        0,
+        1
+       ],
+       [
+        0.09999999999999999,
+        1
+       ],
+       [
+        0.12,
+        0
+       ]
+      ]
+     },
+     {
+      "do": "show",
+      "part": "squat",
+      "keys": [
+       [
+        0.09999999999999999,
+        0
+       ],
+       [
+        0.12,
+        1
+       ],
+       [
+        0.38,
+        1
+       ],
+       [
+        0.4,
+        0
+       ]
+      ]
+     },
+     {
+      "do": "show",
+      "part": "mid_rise",
+      "keys": [
+       [
+        0.38,
+        0
+       ],
+       [
+        0.4,
+        1
+       ],
+       [
+        0.48,
+        1
+       ],
+       [
+        0.5,
+        0
+       ]
+      ]
+     },
+     {
+      "do": "show",
+      "part": "stand",
+      "keys": [
+       [
+        0.48,
+        0
+       ],
+       [
+        0.5,
+        1
+       ],
+       [
+        0.6799999999999999,
+        1
+       ],
+       [
+        0.7,
+        0
+       ]
+      ]
+     },
+     {
+      "do": "show",
+      "part": "shock",
+      "keys": [
+       [
+        0.6799999999999999,
+        0
+       ],
+       [
+        0.7,
+        1
+       ],
+       [
+        1.48,
+        1
+       ],
+       [
+        1.5,
+        0
+       ]
+      ]
+     },
+     {
+      "do": "show",
+      "part": "mid_calm",
+      "keys": [
+       [
+        1.48,
+        0
+       ],
+       [
+        1.5,
+        1
+       ],
+       [
+        1.58,
+        1
+       ],
+       [
+        1.6,
+        0
+       ]
+      ]
+     },
+     {
+      "do": "show",
+      "part": "chat",
+      "keys": [
+       [
+        1.58,
+        0
+       ],
+       [
+        1.6,
+        1
+       ],
+       [
+        2.53,
+        1
+       ],
+       [
+        2.55,
+        0
+       ]
+      ]
+     },
+     {
+      "do": "show",
+      "part": "laugh",
+      "keys": [
+       [
+        2.53,
+        0
+       ],
+       [
+        2.55,
+        1
+       ]
+      ]
+     },
+     {
+      "do": "hop",
+      "part": "root",
+      "at": 0.7,
+      "height": 16,
+      "dur": 0.35,
+      "impact": 0.25,
+      "sfx": false
+     },
+     {
+      "do": "bob",
+      "part": "root",
+      "from": 1.6,
+      "amp_px": 4,
+      "period": 0.5
+     }
+    ]
+   }
+  },
+  {
+   "surface": {
+    "seed": "TODO 表面空白处的一个点 [x,y]，或者改成 quad"
+   },
+   "place": {
+    "width": 0.55,
+    "height": 0.86,
+    "anchor": [
+     0.36,
+     0.55
+    ],
+    "fit": "art"
+   },
+   "look": {
+    "shade": 0.15,
+    "soften": 0.6,
+    "boil": 0.5,
+    "clip": false
+   },
+   "rig": {
+    "enter": {
+     "motion": "drop",
+     "at": -0.25,
+     "dur": 0.6,
+     "fallFrac": 0.55,
+     "fall": 0.6,
+     "dx0": -0.3,
+     "spin": 0,
+     "idle": "none"
+    },
+    "parts": {
+     "root": {
+      "virtual": true,
+      "pivot_frac": [
+       0.68,
+       0.95
+      ]
+     },
+     "jump": {
+      "png": "R_jump.png",
+      "parent": "root"
+     },
+     "squat": {
+      "png": "R_squat.png",
+      "parent": "root"
+     },
+     "mid_rise": {
+      "png": "R_mid_rise.png",
+      "parent": "root"
+     },
+     "stand": {
+      "png": "R_stand.png",
+      "parent": "root"
+     },
+     "shock": {
+      "png": "R_shock.png",
+      "parent": "root"
+     },
+     "mid_calm": {
+      "png": "R_mid_calm.png",
+      "parent": "root"
+     },
+     "chat": {
+      "png": "R_chat.png",
+      "parent": "root"
+     },
+     "laugh": {
+      "png": "R_laugh.png",
+      "parent": "root"
+     }
+    },
+    "acts": [
+     {
+      "do": "show",
+      "part": "jump",
+      "keys": [
+       [
+        0,
+        1
+       ],
+       [
+        0.09999999999999999,
+        1
+       ],
+       [
+        0.12,
+        0
+       ]
+      ]
+     },
+     {
+      "do": "show",
+      "part": "squat",
+      "keys": [
+       [
+        0.09999999999999999,
+        0
+       ],
+       [
+        0.12,
+        1
+       ],
+       [
+        0.38,
+        1
+       ],
+       [
+        0.4,
+        0
+       ]
+      ]
+     },
+     {
+      "do": "show",
+      "part": "mid_rise",
+      "keys": [
+       [
+        0.38,
+        0
+       ],
+       [
+        0.4,
+        1
+       ],
+       [
+        0.48,
+        1
+       ],
+       [
+        0.5,
+        0
+       ]
+      ]
+     },
+     {
+      "do": "show",
+      "part": "stand",
+      "keys": [
+       [
+        0.5,
+        0
+       ],
+       [
+        0.52,
+        1
+       ],
+       [
+        0.78,
+        1
+       ],
+       [
+        0.78,
+        0
+       ]
+      ]
+     },
+     {
+      "do": "show",
+      "part": "shock",
+      "keys": [
+       [
+        0.7599999999999999,
+        0
+       ],
+       [
+        0.7799999999999999,
+        1
+       ],
+       [
+        1.608,
+        1
+       ],
+       [
+        1.6280000000000001,
+        0
+       ]
+      ]
+     },
+     {
+      "do": "show",
+      "part": "mid_calm",
+      "keys": [
+       [
+        1.608,
+        0
+       ],
+       [
+        1.6280000000000001,
+        1
+       ],
+       [
+        1.7080000000000002,
+        1
+       ],
+       [
+        1.7280000000000002,
+        0
+       ]
+      ]
+     },
+     {
+      "do": "show",
+      "part": "chat",
+      "keys": [
+       [
+        1.7080000000000002,
+        0
+       ],
+       [
+        1.7280000000000002,
+        1
+       ],
+       [
+        2.73,
+        1
+       ],
+       [
+        2.75,
+        0
+       ]
+      ]
+     },
+     {
+      "do": "show",
+      "part": "laugh",
+      "keys": [
+       [
+        2.73,
+        0
+       ],
+       [
+        2.75,
+        1
+       ]
+      ]
+     },
+     {
+      "do": "hop",
+      "part": "root",
+      "at": 0.7799999999999999,
+      "height": 20,
+      "dur": 0.35,
+      "impact": 0.25,
+      "sfx": false
+     },
+     {
+      "do": "bob",
+      "part": "root",
+      "from": 1.7280000000000002,
+      "amp_px": 5,
+      "period": 0.58
+     }
+    ]
+   }
+  },
+  {
+   "art": "badge.jpg",
+   "surface": {
+    "seed": "TODO 表面空白处的一个点 [x,y]，或者改成 quad"
+   },
+   "place": {
+    "width": 0.26,
+    "height": 0.32,
+    "anchor": [
+     0.8,
+     0.22
+    ]
+   },
+   "look": {
+    "shade": 0.15,
+    "soften": 0.6,
+    "boil": 0.4
+   },
+   "groups": [
+    {
+     "name": "badge",
+     "box": "rest",
+     "motion": "drop",
+     "at": 0.45,
+     "dur": 0.7,
+     "spin": 1.1,
+     "dx0": 0.4,
+     "dust": false,
+     "idle": "jelly"
+    }
+   ]
+  }
+ ]
+}

@@ -1,0 +1,13 @@
+{
+ "base": "base.jpg",
+ "size": [1920, 1080],
+ "desk_y": 905,
+ "gather": [700, 430],
+ "float": [725, 340],
+ "land_x": 1560,
+ "hops": [[1495, 95], [1435, 75], [1390, 60]],
+ "desk_height": 410,
+ "float_height": 560,
+ "colors": ["#f29a8a", "#5aa04a"],
+ "poses": {"burst": "burst.png", "float": "float.png", "hop": "hop.png", "land": "land.png", "stand": "stand.png", "wave": "wave.png"}
+}

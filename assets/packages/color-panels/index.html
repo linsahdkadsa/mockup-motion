@@ -1,0 +1,174 @@
+<!doctype html><html><head><meta charset="utf-8"><link rel="icon" href="data:,"><style>html,body{margin:0;background:#000}canvas{display:block}</style></head><body>
+<canvas id="c" width="1080" height="1920"></canvas>
+<script src="pkg.js"></script>
+<script>
+// 色块转场包装（临摹「THIS IS WHAT WE DO」色块片头后做成的通用模板）。内容全部从 pkg.js（mm package 由 package.json 生成）读。
+// 结构：开场 2×2 色块 + 逐行出字 → 色块和字依次往下掉 → 每段一块颜色板从顶上推下来，带着标题和图标 → 收尾色块掉回原位拼回开场（可循环）
+// 所有曲线都是逐帧量原片得到的。画面固定 1080×1920（原片 540×960 ×2）。
+const PK = window.PKG || {};
+const W = 1080, H = 1920, S = 2;
+const PAL = PK.palette || ['#5bb78e', '#79ccee', '#d62c47', '#f5c324'];      // 左上、右上、左下、右下
+const C = { TL: PAL[0], TR: PAL[1], BL: PAL[2], BR: PAL[3], W: PK.ink || '#ffffff' };
+const FONT = PK.font || '"Avenir Next", "Montserrat", sans-serif';
+const cv = document.getElementById('c'), ctx = cv.getContext('2d');
+const clamp = (x, a = 0, b = 1) => Math.max(a, Math.min(b, x));
+const lut = (pts, dur) => t => { const u = clamp(t / dur) * (pts.length - 1), i = Math.min(pts.length - 2, Math.floor(u)), f = u - i; return pts[i] + (pts[i + 1] - pts[i]) * f; };
+const WIPE = lut([0, .018, .08, .17, .285, .422, .565, .698, .81, .90, .969, 1], 0.44);          // 换段：新颜色板从顶上推下来
+const FALL = lut([0, .004, .023, .06, .14, .32, .61, .78, .87, .93, .97, 1], 0.44);               // 开场色块往下掉
+const DROP = lut([0, .022, .037, .056, .083, .121, .177, .286, .566, .717, .789, .837, .872, .90, .92, .94, .953, .963, .974, .982, .989, .993, .997, .999, 1], 0.96); // 收尾色块掉回来
+const sineOut = u => Math.sin(clamp(u) * Math.PI / 2);
+function fitSize(s, size, maxW) { ctx.font = `800 ${size}px ${FONT}`; const w = ctx.measureText(s).width; return w > maxW ? size * maxW / w : size; }
+function text(s, x, y, size, alpha = 1) {      // y = 大写字母顶边
+  ctx.save(); ctx.globalAlpha = alpha; ctx.fillStyle = C.W; ctx.font = `800 ${size}px ${FONT}`;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic'; ctx.fillText(s, x, y + size * 0.72); ctx.restore();
+}
+// ---------- 线条图标（白色描边）+ 各自的小动作（逐帧量过）----------
+const easeIn = u => clamp(u) * clamp(u), easeOut = u => 1 - (1 - clamp(u)) ** 2;
+const seg = (t, a, b) => clamp((t - a) / (b - a));
+function damp(t, at, amp, period, decay) { const k = t - at; return k < 0 ? 0 : amp * Math.sin(k / period * Math.PI * 2) * Math.exp(-k * decay); }
+const ORIG = { video: 2.24, photo: 4.08, bulb: 5.96, team: 7.98 };     // 原片里四个图标那段的起点；内置图标的小动作按这个换算
+const IMGS = {};
+function icon(kind, cx, top, t, alpha, uin) {
+  if (!(kind in ORIG)) {          // 自定义 PNG 图标：滑进来 → 段内 0.6 秒弹一下 + 晃两下 → 静止
+    const im = IMGS[kind]; if (!im) return;
+    const k = t, sc = Math.min(520 / im.width, 520 / im.height);
+    const pop = k > 0.6 && k < 0.85 ? 1 + 0.12 * Math.sin((k - 0.6) / 0.25 * Math.PI) : 1, rot = damp(k, 0.75, 5, 0.2, 4) * Math.PI / 180;
+    ctx.save(); ctx.globalAlpha = alpha; ctx.translate(cx, top + 220); ctx.rotate(rot); ctx.scale(pop * sc, pop * sc);
+    ctx.drawImage(im, -im.width / 2, -im.height / 2); ctx.restore(); return;
+  }
+  t = t + ORIG[kind];
+  ctx.save(); ctx.globalAlpha = alpha; ctx.strokeStyle = C.W; ctx.fillStyle = C.W; ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+  ctx.translate(cx, top);
+  const SC = kind === 'team' ? 2.0 : 2.2; ctx.scale(SC, SC); ctx.lineWidth = 10 / SC;   // 原片描边约 5px@540
+  const rr = (x, y, w, h, r) => { ctx.beginPath(); ctx.roundRect(x, y, w, h, r); ctx.stroke(); };
+  const R = d => d * Math.PI / 180;
+  if (kind === 'video') {
+    // 板子角度：常态 -10°；进场张得更开；2.92 小合；3.12 大张 → 3.30 啪地合上；3.36 起整块晃两下
+    let bar = -10 - 14 * (1 - uin);
+    if (t > 2.9 && t < 3.1) bar = -10 + 8 * Math.sin(seg(t, 2.9, 3.1) * Math.PI);
+    if (t >= 3.1 && t < 3.3) bar = -10 - 28 * easeOut(seg(t, 3.1, 3.28));
+    if (t >= 3.3 && t < 3.36) bar = -38 + 38 * easeIn(seg(t, 3.28, 3.35));
+    if (t >= 3.36 && t < 3.62) bar = -10 * easeOut(seg(t, 3.4, 3.62));
+    const body = damp(t, 3.37, 6.5, 0.2, 4);       // 合上的反作用：整块左右晃
+    ctx.translate(0, 196); ctx.rotate(R(body)); ctx.translate(0, -196);
+    rr(-110, 60, 220, 140, 14);
+    ctx.save(); ctx.translate(-110, 56); ctx.rotate(R(bar)); rr(0, -34, 220, 32, 6);
+    for (let i = 0; i < 6; i++) { ctx.beginPath(); ctx.moveTo(26 + i * 34, -34); ctx.lineTo(12 + i * 34, -2); ctx.stroke(); } ctx.restore();
+    ctx.beginPath(); ctx.moveTo(-18, 98); ctx.lineTo(28, 130); ctx.lineTo(-18, 162); ctx.closePath(); ctx.stroke();
+  } else if (kind === 'photo') {
+    // 4.60 镜头圈变粗（内半径 44→10）→ 4.96 起变回；5.36 快门从上往下盖满 → 相机左歪 → 5.60 快门往下退
+    const tilt = t < 5.42 ? 0 : t < 5.52 ? -7 * easeOut(seg(t, 5.42, 5.52)) : -7 * (1 - easeOut(seg(t, 5.52, 5.66)));
+    ctx.translate(0, 180); ctx.rotate(R(tilt)); ctx.translate(0, -180);
+    rr(-112, 40, 224, 140, 18);
+    ctx.beginPath(); ctx.moveTo(-52, 40); ctx.lineTo(-36, 10); ctx.lineTo(36, 10); ctx.lineTo(52, 40); ctx.stroke();
+    const ro = 52;
+    let ri = t < 4.6 ? ro : t < 4.88 ? ro - (ro - 12) * seg(t, 4.6, 4.88) : t < 4.94 ? 12 : 12 + (ro - 12) * easeOut(seg(t, 4.94, 5.12));   // 原片是匀速变粗
+    ctx.beginPath(); ctx.arc(0, 112, ro, 0, Math.PI * 2); ctx.stroke();
+    if (ri < ro - 1) { ctx.beginPath(); ctx.arc(0, 112, ro, 0, Math.PI * 2); ctx.arc(0, 112, ri, 0, Math.PI * 2, true); ctx.fill('evenodd'); }
+    const fin = seg(t, 5.36, 5.44), fout = seg(t, 5.6, 5.68);
+    if (fin > 0 && fout < 1) {
+      const y0 = 112 - ro + 2 * ro * easeIn(fout), y1 = 112 - ro + 2 * ro * easeOut(fin);
+      ctx.save(); ctx.beginPath(); ctx.rect(-ro, y0, 2 * ro, Math.max(0, y1 - y0)); ctx.clip();
+      ctx.beginPath(); ctx.arc(0, 112, ro, 0, Math.PI * 2); ctx.fill(); ctx.restore();
+    }
+  } else if (kind === 'bulb') {
+    // 进场铅笔歪 14° 落正；6.28–6.92 左右摇着「写字」越摇越轻；7.40 灯泡整体噗地放大 12%
+    const pulse = t > 7.4 && t < 7.62 ? 1 + 0.12 * Math.sin(seg(t, 7.4, 7.62) * Math.PI) : 1;
+    ctx.translate(0, 130); ctx.scale(pulse, pulse); ctx.translate(0, -130);
+    // 灯泡：圆 + 往里收的颈 + 一个胶囊底座（照原片）
+    ctx.beginPath(); ctx.arc(0, 86, 84, Math.PI * 0.72, Math.PI * 2.28); ctx.quadraticCurveTo(30, 186, 26, 196); ctx.lineTo(-26, 196); ctx.quadraticCurveTo(-30, 186, -42, 160); ctx.closePath(); ctx.stroke();
+    rr(-30, 212, 60, 24, 12);
+    let pen = 14 * (1 - uin);
+    if (t > 6.28 && t < 6.96) pen = 10 * Math.abs(Math.sin((t - 6.28) / 0.15 * Math.PI)) * (1 - seg(t, 6.28, 6.96) * 0.6);
+    ctx.save(); ctx.translate(0, 186); ctx.rotate(R(pen)); ctx.translate(0, -186);    // 绕铅笔底部摇
+    ctx.beginPath(); ctx.moveTo(0, 20); ctx.lineTo(16, 52); ctx.lineTo(16, 170); ctx.arc(0, 170, 16, 0, Math.PI); ctx.lineTo(-16, 52); ctx.closePath(); ctx.stroke();   // 笔尖朝上、底部圆头
+    ctx.beginPath(); ctx.moveTo(-16, 52); ctx.lineTo(16, 52); ctx.stroke(); ctx.restore();
+  } else if (kind === 'team') {
+    // 8.52 小人缩进圆里 → 8.68 整个图标边转 45° 边缩成小分子 → 9.04 反转着长回 → 9.28 小人冒出来
+    let gs = 1, rot = 0;
+    if (t > 8.68 && t < 8.92) { const u = easeIn(seg(t, 8.68, 8.92)); gs = 1 - 0.82 * u; rot = 45 * u; }
+    else if (t >= 8.92 && t < 9.04) { gs = 0.18; rot = 45; }
+    else if (t >= 9.04 && t < 9.3) { const u = Math.sin(seg(t, 9.04, 9.3) * Math.PI / 2); gs = 0.18 + 0.82 * u + 0.05 * Math.sin(u * Math.PI); rot = 45 * (1 - u); }
+    const fig = t < 8.52 ? 1 : t < 8.68 ? 1 - easeIn(seg(t, 8.52, 8.68)) : t < 9.28 ? 0 : easeOut(seg(t, 9.28, 9.44)) * (1 + 0.15 * Math.sin(seg(t, 9.28, 9.44) * Math.PI));
+    ctx.translate(0, 130); ctx.rotate(R(rot)); ctx.scale(gs, gs);
+    const pts = [[-90, -90], [90, -90], [-90, 90], [90, 90]];
+    ctx.beginPath(); ctx.moveTo(-52, -52); ctx.lineTo(52, 52); ctx.moveTo(52, -52); ctx.lineTo(-52, 52); ctx.stroke();
+    pts.forEach(([x, y]) => {
+      ctx.save(); ctx.translate(x, y);
+      ctx.beginPath(); ctx.arc(0, 0, 52, 0, Math.PI * 2); ctx.stroke();
+      if (fig > 0.02) {
+        ctx.save(); ctx.beginPath(); ctx.arc(0, 0, 50, 0, Math.PI * 2); ctx.clip();
+        ctx.translate(0, 44 * (1 - fig)); ctx.scale(fig, fig);          // 小人从圆底缩进去 / 冒出来
+        ctx.beginPath(); ctx.arc(0, -12, 15, 0, Math.PI * 2); ctx.stroke();
+        ctx.beginPath(); ctx.arc(0, 36, 30, Math.PI * 1.12, Math.PI * 1.88); ctx.stroke(); ctx.restore();
+      }
+      ctx.restore();
+    });
+  }
+  ctx.restore();
+}
+// ---------- 时间线（由内容自动排）----------
+const INTRO = (PK.intro || ['THIS', 'IS', 'WHAT', 'WE', 'DO']).slice(0, 5);
+const WORD_T = [.08, .32, .44, .68, .92], FALL_K = [1700, 2700, 4760, 9000, 16000];
+const LT = [180, 300, 426, 551, 670], off = (5 - INTRO.length) * 60;          // 行数少就整体往下居中
+const LINE_TOP = INTRO.map((_, i) => (LT[i] + off) * S);
+const WORD_SIZE = Math.min(...INTRO.map(w => fitSize(w, 250, W * 0.84)));
+const SEG_DUR = PK.segDur || 1.9;
+const ORDER = ['BL', 'TL', 'TR', 'BR'];                                       // 第一段的颜色 = 左下块（开场掉完剩下的就是它）
+const SEGS = (PK.segments || [{ title: 'VIDEO', icon: 'video' }, { title: 'PHOTO', icon: 'photo' }, { title: 'MOTION|GRAPHICS', icon: 'bulb' }, { title: 'COWORKING', icon: 'team' }])
+  .map((s, k) => { const at = 2.24 + k * SEG_DUR; return { col: C[ORDER[k % 4]], title: s.title, icon: s.icon || 'bulb', at, ws: k ? at - 0.04 : null }; });
+const OUT = SEGS[SEGS.length - 1].at + SEG_DUR * 1.15, DUR = OUT + 1.88;
+const TITLE_TOP = 322 * S, ICON_TOP = 422 * S;
+const TITLE_SIZE = Math.min(133, ...SEGS.flatMap(s => s.title.split('|').map(l => fitSize(l, 133, W * 0.84))));
+const lastCol = SEGS[SEGS.length - 1].col;
+const DROPS = [['BR', 0], ['BL', .08], ['TR', .28], ['TL', .32]].filter(([k]) => C[k] !== lastCol);
+
+function render(t) {
+  ctx.clearRect(0, 0, W, H);
+  ctx.fillStyle = SEGS[0].col; ctx.fillRect(0, 0, W, H);
+  for (const s of SEGS) if (s.ws !== null && t > s.ws) { ctx.fillStyle = s.col; ctx.fillRect(0, 0, W, WIPE(t - s.ws) * H); }
+  if (t < 2.5) {
+    const half = H / 2;
+    const br = 481 * S + FALL(t - 1.36) * (H - 481 * S); ctx.fillStyle = C.BR; ctx.fillRect(W / 2, br, W / 2, H - br);
+    const tr = FALL(t - 1.72) * H; ctx.fillStyle = C.TR; ctx.fillRect(W / 2, tr, W / 2, half);
+    const tl = FALL(t - 1.88) * H; ctx.fillStyle = C.TL; ctx.fillRect(0, tl, W / 2, half);
+    INTRO.forEach((w, i) => { if (t < WORD_T[i]) return; const u = Math.max(0, t - 1.41); text(w, W / 2, LINE_TOP[i] + FALL_K[i] * u * u * S, WORD_SIZE); });
+  }
+  SEGS.forEach((s, k) => {
+    if (t < s.at - 0.01) return;
+    const next = SEGS[k + 1], outAt = next ? next.ws : OUT;
+    const din = k === 0 ? 0.2 : 0.28, uin = sineOut((t - s.at) / din);
+    let dy = (1 - uin) * (k === 0 ? -319 : -300) * S, a = k === 0 ? clamp((t - s.at) / din * 3) : 1, clipTop = 0, clipBot = H;
+    if (s.ws !== null && t < s.ws + 0.44) clipBot = WIPE(t - s.ws) * H;
+    if (t > outAt) {
+      if (next) { clipTop = WIPE(t - outAt) * H; dy += clamp((t - outAt) / 0.28) * 130 * S; a *= 1 - clamp((t - outAt) / 0.28); }
+      else { const uo = clamp((t - outAt) / 0.28); dy += uo * 130 * S; a *= 1 - uo; }
+    }
+    if (a <= 0 || clipBot <= clipTop) return;
+    ctx.save(); ctx.beginPath(); ctx.rect(0, clipTop, W, clipBot - clipTop); ctx.clip();
+    const lines = s.title.split('|');
+    if (lines.length === 1) text(lines[0], W / 2, TITLE_TOP + dy, TITLE_SIZE, a);
+    else lines.forEach((ln, j) => text(ln, W / 2, (253 + j * 66) * S + dy, TITLE_SIZE, a));
+    icon(s.icon, W / 2, ICON_TOP + dy, t - s.at, a, uin);
+    ctx.restore();
+  });
+  if (t > OUT) for (const [k, d] of DROPS) {
+    const left = k === 'TL' || k === 'BL', top = k === 'TL' || k === 'TR';
+    const y = DROP(t - OUT - d) * (top ? H / 2 : H) - H / 2;
+    ctx.fillStyle = C[k]; ctx.fillRect(left ? 0 : W / 2, y, W / 2, H / 2);
+  }
+}
+// 音效事件（mm package 拿去合成）：出字 pop、色块掉 / 推板 whoosh、图标主动作、收尾落地
+const ACT = { video: [1.06, 'knock'], photo: [1.28, 'pop'], bulb: [1.44, 'pop'], team: [1.06, 'boing'] };
+window.__events = () => [
+  ...INTRO.map((_, i) => ({ t: WORD_T[i], kind: 'pop', pitch: 1 + i * 0.08, gain: 0.5 })),
+  { t: 1.4, kind: 'whoosh', dur: 0.5, gain: 0.5 },
+  ...SEGS.map(s => ({ t: s.ws ?? s.at - 0.1, kind: 'whoosh', dur: 0.4, gain: 0.45 })),
+  ...SEGS.map(s => { const [d, k] = ACT[s.icon] || [0.6, 'pop']; return { t: s.at + d, kind: k, gain: 0.55 }; }),
+  ...DROPS.map(([, d]) => ({ t: OUT + d + 0.3, kind: 'thud', gain: 0.5 })),
+];
+window.__render = t => render(t); window.__duration = DUR;
+const custom = SEGS.map(s => s.icon).filter(k => !(k in ORIG));
+Promise.all(custom.map(k => new Promise(r => { const i = new Image(); i.onload = () => { IMGS[k] = i; r(); }; i.onerror = r; i.src = k; })))
+  .then(() => document.fonts.ready).then(() => { render(0); window.__ready = true; });
+</script></body></html>

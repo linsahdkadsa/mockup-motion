@@ -1,0 +1,252 @@
+{
+ "base": "base.png",
+ "duration": 3.67,
+ "camera": {
+  "push": 0.04,
+  "drift": 0.4
+ },
+ "graphics": [
+  {
+   "art": "pose_enter.png",
+   "surface": {
+    "quad": "TODO 表面四角 [[左上],[右上],[右下],[左下]]；整面玻璃就写整幅画面的四个角"
+   },
+   "place": {
+    "width": 0.42,
+    "height": 0.74,
+    "anchor": [
+     0.6,
+     0.42
+    ],
+    "fit": "art"
+   },
+   "look": {
+    "shade": 0.05,
+    "soften": 0.3,
+    "boil": 0.15,
+    "clip": false
+   },
+   "rig": {
+    "enter": {
+     "motion": "peek",
+     "from": "bottom",
+     "clip": "body",
+     "at": 0.07,
+     "rise": 0.72,
+     "riseDur": 0.13,
+     "hold": 0.07,
+     "popDur": 0.1,
+     "overshoot": 0.12,
+     "idle": "none"
+    },
+    "parts": {
+     "root": {
+      "virtual": true,
+      "pivot_frac": [
+       0.5,
+       0.9
+      ]
+     },
+     "laugh": {
+      "png": "pose_enter.png",
+      "parent": "root"
+     },
+     "wow": {
+      "png": "pose_wow.png",
+      "parent": "root"
+     },
+     "look": {
+      "png": "pose_nobody_look.png",
+      "parent": "root"
+     },
+     "sip": {
+      "png": "pose_nobody_loop.png",
+      "parent": "root"
+     }
+    },
+    "acts": [
+     {
+      "do": "show",
+      "part": "laugh",
+      "keys": [
+       [
+        0,
+        1
+       ],
+       [
+        0.26,
+        1
+       ],
+       [
+        0.27,
+        0
+       ]
+      ]
+     },
+     {
+      "do": "show",
+      "part": "wow",
+      "keys": [
+       [
+        0,
+        0
+       ],
+       [
+        0.26,
+        0
+       ],
+       [
+        0.27,
+        1
+       ],
+       [
+        0.99,
+        1
+       ],
+       [
+        1.0,
+        0
+       ]
+      ]
+     },
+     {
+      "do": "show",
+      "part": "look",
+      "keys": [
+       [
+        0,
+        0
+       ],
+       [
+        0.99,
+        0
+       ],
+       [
+        1.0,
+        1
+       ],
+       [
+        1.52,
+        1
+       ],
+       [
+        1.53,
+        0
+       ]
+      ]
+     },
+     {
+      "do": "show",
+      "part": "sip",
+      "keys": [
+       [
+        0,
+        0
+       ],
+       [
+        1.52,
+        0
+       ],
+       [
+        1.53,
+        1
+       ]
+      ]
+     },
+     {
+      "do": "scale",
+      "part": "root",
+      "keys": [
+       [
+        1.53,
+        1,
+        1
+       ],
+       [
+        1.58,
+        1.03,
+        0.97
+       ],
+       [
+        1.68,
+        1,
+        1
+       ]
+      ]
+     },
+     {
+      "do": "bob",
+      "part": "root",
+      "from": 1.8,
+      "amp_px": 3,
+      "period": 1.2
+     }
+    ]
+   }
+  },
+  {
+   "art": "logo.png",
+   "surface": {
+    "quad": "TODO 表面四角 [[左上],[右上],[右下],[左下]]；整面玻璃就写整幅画面的四个角"
+   },
+   "place": {
+    "width": 0.44,
+    "height": 0.25,
+    "anchor": [
+     0.41,
+     0.7
+    ]
+   },
+   "look": {
+    "shade": 0.05,
+    "soften": 0.3,
+    "boil": 0.15,
+    "clip": false
+   },
+   "groups": [
+    {
+     "name": "knead",
+     "box": "rest",
+     "motion": "pop",
+     "at": 0.67,
+     "step": 0.09,
+     "stagger": "even",
+     "idle": "none"
+    }
+   ]
+  },
+  {
+   "text": {
+    "lines": [
+     "•  no knead to panic  •"
+    ],
+    "weight": 600,
+    "color": "#ffffff",
+    "font": "\"Avenir Next\", \"Helvetica Neue\", sans-serif"
+   },
+   "surface": {
+    "quad": "TODO 表面四角 [[左上],[右上],[右下],[左下]]；整面玻璃就写整幅画面的四个角"
+   },
+   "place": {
+    "width": 0.22,
+    "height": 0.05,
+    "anchor": [
+     0.41,
+     0.87
+    ]
+   },
+   "look": {
+    "shade": 0.05,
+    "soften": 0.3,
+    "clip": false
+   },
+   "auto": {
+    "title": {
+     "motion": "type",
+     "at": 2.07,
+     "step": 0.03
+    }
+   }
+  }
+ ]
+}
