@@ -8,6 +8,19 @@
 
 分工：场景和角色姿势用你手上的生图工具出（Midjourney、Nano Banana、GPT Image 都行），动画全部由代码完成。节奏是逐帧临摹参考片量出来的，不是 AI 视频，所以每一帧都可控、可改。
 
+<p align="center">
+  <img src="docs/peek.gif" height="300" alt="花店橱窗：小蜜蜂探头">
+  <img src="docs/street.gif" height="300" alt="街头：小怪混在行人里，楼后探出大怪">
+</p>
+<p align="center">
+  <img src="docs/bear.gif" width="400" alt="橱窗贴纸：小熊活过来">
+  <img src="docs/nigiri.gif" width="400" alt="白色窗贴一笔画出">
+</p>
+
+![14 个模板做出来的案例](docs/gallery.jpg)
+
+> 上面全部是代码逐帧渲染的，场景和角色姿势用生图工具出。
+
 这是 [Claude Code](https://claude.com/claude-code) / Codex 的 skill：装好以后，直接用中文跟 agent 说你要什么就行。
 
 ## 安装
