@@ -641,6 +641,52 @@ def cmd_sky(a):
     print(json.dumps({'sky': out, 'check': chk, 'sky_fraction': round(frac, 3), 'note': '天空占比太小（<3%）说明没找到蓝天，换一张有天空缺口的街景' if frac < 0.03 else ''}, ensure_ascii=False))
 
 
+def _vision_people(pdir, fs, movs, notes):
+    """macOS：用系统人像分割（mmlib/segpeople.swift，第一次自动编译到缓存）在「有人在动」的区域里抠出完整的人。
+    返回每帧的布尔遮罩列表；不是 macOS、没有 swiftc 或出错时返回 None（只用帧间差分）"""
+    import platform, shutil as sh, hashlib, numpy as np
+    from PIL import Image
+    from scipy import ndimage
+    if platform.system() != 'Darwin' or not sh.which('swiftc'):
+        notes.append('不是 macOS（或没有 swiftc）：行人遮罩只用帧间差分，衣服和背景颜色接近时大怪可能叠到人身上，看自检图')
+        return None
+    src = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'mmlib', 'segpeople.swift')
+    tag = hashlib.md5(open(src, 'rb').read()).hexdigest()[:10]
+    exe = os.path.join(os.path.expanduser('~/.cache/mockup-motion'), f'segpeople_{tag}')
+    if not os.path.exists(exe):
+        os.makedirs(os.path.dirname(exe), exist_ok=True)
+        r = subprocess.run(['swiftc', '-O', src, '-o', exe], capture_output=True, text=True)
+        if r.returncode:
+            notes.append('人像分割编译失败，只用帧间差分：' + r.stderr.strip()[-200:]); return None
+    jobs = []
+    for i, (f, mov) in enumerate(zip(fs, movs)):
+        lab, n = ndimage.label(ndimage.binary_dilation(mov, iterations=8)); rects = []
+        H, W = mov.shape
+        for sl in ndimage.find_objects(lab):
+            if sl is None: continue
+            y0, y1, x0, x1 = sl[0].start, sl[0].stop, sl[1].start, sl[1].stop
+            if (y1 - y0) * (x1 - x0) < 900: continue
+            h_, w_ = y1 - y0, x1 - x0                  # 人的上半身常常漏在差分外：框往上、往两边多放一些
+            rects.append([max(0, x0 - 0.4 * w_), max(0, y0 - 0.6 * h_), min(W, x1 + 0.4 * w_) - max(0, x0 - 0.4 * w_), min(H, y1 + 0.15 * h_) - max(0, y0 - 0.6 * h_)])
+        if rects: jobs.append({'in': os.path.join(pdir, f), 'out': os.path.join(pdir, f'.v_{i:03d}.png'), 'rects': rects, 'i': i})
+    if not jobs: return None
+    jf = os.path.join(pdir, '.vision_jobs.json'); json.dump(jobs, open(jf, 'w'))
+    r = subprocess.run([exe, jf], capture_output=True, text=True)
+    out = [None] * len(fs)
+    for j in jobs:
+        if os.path.exists(j['out']):
+            v = np.asarray(Image.open(j['out']).convert('L')) > 110
+            near_motion = ndimage.binary_dilation(movs[j['i']], iterations=40)   # 只留和走动的人连着的部分（远处站着不动的人不算）
+            lab, n = ndimage.label(v); keep = np.zeros_like(v)
+            for k in range(1, n + 1):
+                c = lab == k
+                if (c & near_motion).any(): keep |= c
+            out[j['i']] = keep; os.remove(j['out'])
+    os.remove(jf)
+    if r.returncode: notes.append('人像分割中途出错，部分帧只用帧间差分：' + r.stderr.strip()[-200:])
+    return out
+
+
 def cmd_plate(a):
     """真人走动底片（AI 视频，固定机位）→ 逐帧图 plate/f_###.jpg + 第一帧 base.jpg + 天空遮罩 sky.png（用逐帧中值算，走动的人不进遮罩）"""
     import math, shutil
@@ -682,10 +728,14 @@ def cmd_plate(a):
         stack = np.stack([np.asarray(Image.open(os.path.join(tmp, f))).astype(np.float32) for f in fs[::max(1, len(fs) // 12)][:24]])   # float32、最多 24 帧：省内存
         med = np.median(stack, 0); m, frac = _sky_mask(med, a.tol, a.smooth)
         from scipy import ndimage                      # 走动的人（任何位置）→ 逐帧行人遮罩 plate/p_###.png（白=人）。大怪画在人后面：天空模式、近处遮挡模式都会把它扣掉
-        sky = m[..., 3] > 127; hit = 0; moved = 0
-        for i, f in enumerate(fs):
+        sky = m[..., 3] > 127; hit = 0; moved = 0; movs = []
+        for i, f in enumerate(fs):                     # ① 帧间差分：哪里有人在动（衣服和背景颜色接近时会漏一块）
             fr = np.asarray(Image.open(os.path.join(tmp, f))).astype(float)
-            mov = ndimage.binary_dilation(ndimage.binary_opening(np.abs(fr - med).sum(-1) > 60, iterations=2), iterations=2)
+            movs.append(ndimage.binary_dilation(ndimage.binary_opening(np.abs(fr - med).sum(-1) > 60, iterations=2), iterations=2))
+        vis = _vision_people(tmp, fs, movs, notes)     # ② macOS 人像分割：在动的地方抠出完整的人（不是 Mac 就跳过）
+        for i, mov in enumerate(movs):
+            if vis is not None and vis[i] is not None: mov = mov | ndimage.binary_dilation(vis[i], iterations=2)
+            mov = ndimage.binary_fill_holes(ndimage.binary_closing(mov, iterations=4))   # 衣服上的小洞补上（大怪不会从人身上透出来）
             if (mov & sky).sum() > 200: hit += 1
             if mov.sum() > 500: moved += 1
             a_ = ndimage.gaussian_filter(mov.astype(float), 1.0) * 255
@@ -703,6 +753,7 @@ def cmd_plate(a):
     w, h = Image.open(os.path.join(pd, fs[0])).size
     drift = float(np.abs(np.asarray(Image.open(os.path.join(pd, fs[0]))).astype(np.float32) - np.asarray(Image.open(os.path.join(pd, fs[-1]))).astype(np.float32)).mean())   # 首帧和末帧比
     if drift > 25: notes.append('首尾差 > 25 多半是镜头在动，遮罩会对不上，重出固定机位')
+    if frac < 0.03: notes.append(f'天空只认出 {frac:.0%}（天偏灰、偏绿时认不出）：楼后的大怪请用近处遮挡层 mm occluder（推荐），或加 --tol -8 重跑；看 sky_check.jpg')
     try:
         with Image.open(os.path.join(d, 'near.png')) as nm_: nsz = nm_.size
     except Exception: nsz = None
@@ -803,7 +854,11 @@ def cmd_frames(a):
     """从视频抽帧做自检：--t 1,2.5,4 指定时刻；--from/--to/--n 在一段里均匀抽 n 帧。出单帧 jpg + 一张联系表"""
     from PIL import Image, ImageDraw
     from mmlib.browser import ffmpeg_exe
-    out = a.out or os.path.splitext(a.video)[0] + '_frames'; os.makedirs(out, exist_ok=True)
+    out = a.out or os.path.splitext(a.video)[0] + '_frames'
+    sheet_path = None
+    if out.lower().endswith(('.jpg', '.jpeg', '.png')):   # --out 写成图片名：联系表存成这个名字，单帧放旁边的同名文件夹
+        sheet_path = out; out = os.path.splitext(out)[0] + '_帧'
+    os.makedirs(out, exist_ok=True)
     ts = [float(x) for x in a.t.split(',')] if a.t else [a.start + (a.end - a.start) * i / max(1, a.n - 1) for i in range(a.n)]
     ims = []
     for t in ts:
@@ -815,7 +870,7 @@ def cmd_frames(a):
     cols = min(len(ims), a.cols); rows = (len(ims) + cols - 1) // cols; w, h = ims[0].size
     sheet = Image.new('RGB', (w * cols, h * rows))
     for i, im in enumerate(ims): sheet.paste(im, ((i % cols) * w, (i // cols) * h))
-    sp_ = os.path.join(out, 'sheet.jpg'); sheet.save(sp_, quality=85)
+    sp_ = sheet_path or os.path.join(out, 'sheet.jpg'); sheet.save(sp_, quality=85)
     print(json.dumps({'frames': len(ims), 'dir': out, 'sheet': sp_}, ensure_ascii=False))
 
 

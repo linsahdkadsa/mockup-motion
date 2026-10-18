@@ -87,10 +87,12 @@
 - 备选「低楼、上半张天空」（small-town main street, low two- and three-story buildings, the upper half of the image is open sky）：好放，但大怪没东西挡，显小、像气球。
 
 **去近景**（能照原图改的改图模型，比如 Nano Banana Pro；参考图 = 上一张空街景，给 `mm occluder` 用）：
-> Edit this street photo: remove the big building close to the camera on the right side, its traffic light pole, all the street trees and all the lamp posts. Where they were, continue the far background naturally: more distant mid-rise buildings, the far sidewalk and the clear pale blue sky. Keep everything else exactly the same: same framing, same far buildings on the left, same crosswalk and road, same light and colors.
+> Edit this street photo: remove the big building close to the camera on the right side, its traffic light pole, all the street trees (including the row of trees in the middle distance) and all the lamp posts. Where they were, continue the far background naturally: more distant mid-rise buildings, the far sidewalk and the clear pale blue sky. Keep everything else exactly the same: same framing, same far buildings on the left, same crosswalk and road, same light and colors.
 
 **把行人画进去**（同一个改图模型，参考图就是街景）：
 > Edit this street photo: add three ordinary real pedestrians seen from behind, walking away from the camera across the zebra crosswalk, already in the middle distance. Their feet are on the crosswalk stripes in the lower part of the image, and each person is about one third of the image height. {每个人：年纪、衣服、在画面哪个位置}. Matching sunlight direction and soft shadows on the road. Keep everything else in the photo exactly the same.
+
+- 视频工具的估价可能偏低（实测扣费是估价的 2 倍），预算按估价 ×2 留。
 
 **让他们走起来**（用你手上的图生视频工具，海螺 H3、Seedance 都行：首帧 = 上一张图，只放这一张参考；固定机位；时长 ≥ 成片；不要声音；比例跟首帧走）：
 > Locked-off static camera on a tripod, absolutely no camera movement, no zoom, no pan. The three pedestrians keep walking away from the camera across the zebra crosswalk toward the far sidewalk at a normal relaxed pace, seen from behind, getting gradually smaller as they move into the distance. Nobody else enters the frame. Buildings, trees and sky stay exactly the same, natural daylight, realistic documentary street footage.

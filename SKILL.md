@@ -83,7 +83,7 @@ mm new peek 场景/       # 复制模板配置，列出要准备的素材文件�
   - 表面要空白，主体要大：表面占画面一半左右，同时留一点环境。
   - 太远就用 `mm frame 高清原图 --box x0,y0,x1,y1 --out 场景/base.png` 裁近：
     - `--box` 默认按「缩到 1080 宽」的坐标写，也就是 `mm grid 高清原图` 默认图上的实线；要按原图像素写，加 `--coords src`。
-    - 默认出 1080×1440 竖图，横版加 `--size 1920x1080`。
+    - 默认出 1080×1440 竖图（3:4，小红书、推特都合适），横版加 `--size 1920x1080`，9:16（抖音、Reels）加 `--size 1080x1920`。
   - 卷帘门要关、开两张同角度的图。
   - peek：窗户上方最好有一块空白招牌板，店名单独贴在那里，角色才能占满整扇窗。
 - **角色**：
@@ -128,7 +128,7 @@ mm grid 场景/base.png --box x0,y0,x1,y1  # 放大看一块（读窗角、眼�
 ```bash
 mm build 场景       # 拆零件、算透视
 mm preview 场景     # 定帧联系表
-mm render 场景 --stills 1,2.5,4   # 场景名.mp4（纯成片）+ _对照.mp4（竖版对照）+ 静帧 + metadata.json；--name 改成片名（默认用文件夹名）
+mm render 场景 --stills 1,2.5,4   # 场景名.mp4（纯成片）+ _对照.mp4（竖版对照，只有场景模板有；mm package 的包装模板只出纯成片和自检图）+ 静帧 + metadata.json；--name 改成片名（默认用文件夹名）
 mm frames 成片.mp4 --from 1 --to 3 --n 12   # 抽连续帧联系表（自检动作、穿模）；--t 1,2,3 抽指定时刻
 mm concat 合集.mp4 a.mp4 b.mp4 …
 mm package 文件夹/ # 包装模板（street-crowd 街头混入 / color-panels 全屏色块），读 package.json
