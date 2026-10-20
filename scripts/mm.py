@@ -1,6 +1,6 @@
 # /// script
 # requires-python = ">=3.10"
-# dependencies = ["numpy", "pillow", "scipy", "scikit-image", "playwright", "imageio-ffmpeg"]
+# dependencies = ["numpy", "pillow", "scipy", "scikit-image", "playwright", "imageio-ffmpeg", "opencv-python-headless"]
 # ///
 """mockup-motion 命令行。用法（推荐用 uv，会自动装依赖）：uv run mm.py <命令> …
 
@@ -27,6 +27,9 @@
   render <场景文件夹> [--layout both]     出 MP4（pure=纯成片，compare=竖版对照，both=都出）
   package <文件夹>                        包装镜头（color-panels、street-crowd），读 package.json 出 MP4
   frames 成片.mp4 --t 1,2,3               从视频抽帧自检
+  measure 参考片.mp4 [--box x0,y0,x1,y1 --at 秒 | --track X,Y,秒] [--span 起,止]   量参考片：切点、每镜联系表、镜头运动、跟踪+缓动拟合
+  beats 音乐 [--cuts "bar:3,drop:1"] [--where 3.16,5.2]   分析音乐：BPM、小节、高潮、突停；节拍写法换算成秒
+  pick 图 [--cell C4 | --at C4.b3 | --box P1 P2 | --quad P1 P2 P3 P4]   选格子定位：网格上选格子、放大再选，出两套坐标 + 回看图
   concat <输出.mp4> <a.mp4> <b.mp4> …     几段硬切接成一条
   import-codex <config.json> <文件夹>     把 Codex image-logo-motion 的配置转过来
 """
@@ -1193,6 +1196,8 @@ def main():
     pl.add_argument('--start', type=int, default=0, help='从第几帧开始（用 --start-sec 按秒写更省事）'); pl.add_argument('--frames', type=int, default=0, help='取多少帧，0=到结尾（用 --dur 按秒写更省事）'); pl.add_argument('--width', type=int, default=1990, help='缩到多宽（比画面宽一点，留给镜头横移）'); pl.add_argument('--tol', type=float, default=-3); pl.add_argument('--smooth', type=float, default=6)
     co = sp.add_parser('cutout'); co.add_argument('sheet'); co.add_argument('--names', help='逗号分隔，按行从上到下、行内从左到右'); co.add_argument('--out'); co.add_argument('--tol', type=float, default=14); co.add_argument('--min-area', type=int, default=6000)
     oc_ = sp.add_parser('occluder'); oc_.add_argument('original', help='原图：没加行人的空街景（行人会走开，不能算进遮挡）'); oc_.add_argument('removed', help='AI 去掉近处楼、树、灯杆后的图'); oc_.add_argument('--out'); oc_.add_argument('--target', help='底片第一帧 base.jpg：遮罩对齐、缩放到它上面'); oc_.add_argument('--diff', type=float, default=110); oc_.add_argument('--min-area', type=int, default=3000)
+    from mmlib import measure as _measure, beats as _beats, pick as _pick
+    _measure.add_parser(sp); _beats.add_parser(sp); _pick.add_parser(sp)
     fr = sp.add_parser('frames'); fr.add_argument('video'); fr.add_argument('--t', help='时刻，逗号分隔'); fr.add_argument('--from', dest='start', type=float, default=0); fr.add_argument('--to', dest='end', type=float, default=3); fr.add_argument('--n', type=int, default=12); fr.add_argument('--cols', type=int, default=4); fr.add_argument('--out')
     ho = sp.add_parser('hold'); ho.add_argument('holding', help='拿着产品的图'); ho.add_argument('empty', help='同姿势空手的图（当底图）'); ho.add_argument('--out', default='front.png'); ho.add_argument('--diff', type=int, default=90)
     de = sp.add_parser('decal'); de.add_argument('images', nargs='+'); de.add_argument('--out'); de.add_argument('--color', default='#ffffff', help='贴纸颜色'); de.add_argument('--keep-margin', action='store_true', help='不裁四周空白（要和底图逐像素对齐的贴纸用）')
@@ -1212,7 +1217,7 @@ def main():
     r.add_argument('--stills', help='再导出这些时间点的静帧（秒，逗号分隔），质检用')
     c = sp.add_parser('concat'); c.add_argument('output'); c.add_argument('inputs', nargs='+')
     a = p.parse_args()
-    {'grid': cmd_grid, 'surface': cmd_surface, 'build': cmd_build, 'preview': cmd_preview, 'layers': cmd_layers, 'frame': cmd_frame, 'split': cmd_split, 'new': cmd_new, 'palette': cmd_palette, 'decal': cmd_decal, 'hold': cmd_hold, 'package': cmd_package, 'sky': cmd_sky, 'plate': cmd_plate, 'cutout': cmd_cutout, 'frames': cmd_frames, 'occluder': cmd_occluder, 'import-codex': cmd_import_codex,
+    {'grid': cmd_grid, 'surface': cmd_surface, 'build': cmd_build, 'preview': cmd_preview, 'layers': cmd_layers, 'frame': cmd_frame, 'split': cmd_split, 'new': cmd_new, 'palette': cmd_palette, 'decal': cmd_decal, 'hold': cmd_hold, 'package': cmd_package, 'sky': cmd_sky, 'plate': cmd_plate, 'cutout': cmd_cutout, 'frames': cmd_frames, 'measure': _measure.run, 'beats': _beats.run, 'pick': _pick.run, 'occluder': cmd_occluder, 'import-codex': cmd_import_codex,
      'render': cmd_render, 'concat': cmd_concat}[a.cmd](a)
 
 

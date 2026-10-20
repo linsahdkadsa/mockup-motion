@@ -109,20 +109,34 @@ mm new peek 场景/       # 复制模板配置，列出要准备的素材文件�
 - **遮罩**：圆窗、拱门这类边框写 `mask`（椭圆、圆角矩形、多边形或遮罩图），角色才像从窗后探出来（`forms.md`）。
 
 ## 5. 找表面、摆放
+**量坐标用 `mm pick`（选格子），别在刻度上估数字。** 盲测里在网格刻度上估数，大家反复量错。
 ```bash
-mm grid 场景/base.png                   # 看坐标
-mm surface 场景/base.png --seed X,Y      # 自动找表面四角（颜色和周围太近、透明玻璃后面很乱时会失败，就手写 quad）
-mm grid 场景/base.png --box x0,y0,x1,y1  # 放大看一块（读窗角、眼睛位置），--box 里填原图像素
+mm pick 场景/base.png                    # 第一层编号网格：列 A B C…，行 1 2 3…，格子左上角写着名字
+mm pick 场景/base.png --cell B2          # 把 B2 放大成第二层（子格 a1…f6）；目标跨两格就框一片 --cell B2:C3
+mm pick 场景/base.png --cell B2.b3       # 要准的点（角、眼睛）再放大一层
+mm pick 场景/base.png --quad B2.b3.c4 G2.e3.d4 G8.e3.d5 B8.b3.b5   # 四个角 → surface.quad（自动排成 左上、右上、右下、左下）
+mm pick 场景/base.png --box A1.e1 H1.b4  # 矩形（两个对角点）
+mm pick 场景/base.png --at D4.c3         # 一个点
 ```
-坐标有两套，`mm grid` 两套都画（实线一套、黄色虚线一套，图上有图例），别填错：
-- `scene.json`、`params.json` 用 **scene 坐标**（底图缩到 1080 宽，或按 `size` 缩）。
-- `package.json`、角色图里的眼睛位置用**原图像素**。
-- 不加参数的网格图上实线是 scene 坐标；**加了 `--box` 的放大图正好反过来：实线是原图像素，黄色虚线才是 scene 坐标**。在放大图上读窗角填 `scene.json`，要读黄色虚线，或者抄输出里的 `box.scene`（放大的这块在 scene 坐标里的范围）。
+- 角正好落在两格交界上，就写一片：`b3:c4` 取的是这片的中心，也就是交叉点。
+- **必须打开回看图 `_pick_check.png`**：每个点下面有局部放大，十字要正压在目标上；偏了回那一层换相邻格。
+- 输出两套坐标：`scene.json`、`params.json` 抄 **scene**；`package.json`、角色图里的位置（眼睛）抄 **src**。
+- 两层误差约 ±17 像素，三层约 ±4 像素。
+- `mm surface 场景/base.png --seed X,Y` 能自动找表面四角（颜色和周围太近、透明玻璃后面很乱时会失败，就用 `mm pick --quad`）；`mm grid` 只用来看全局、估范围。
 
-把 `scene.json` 里的 `surface` 换成 `seed` 或者 `quad`（左上、右上、右下、左下），再调 `place`：
+把 `scene.json` 里的 `surface` 换成 `seed` 或者 `quad`（直接抄 `mm pick` 输出的 scene 坐标），再调 `place`：
 - `width`、`height` 是占表面的比例，`anchor` 是位置。
 - 系统会按图形的**实际内容范围**缩放，AI 图四周的空白不算。
 - 从同一张图切出来的几个角色，`place` 写成一样，再加 `"fit": "art"`，相对位置就保持不变。
+
+## 5.5 临摹参考片、卡音乐
+- **临摹先跑 `mm measure 参考片.mp4`**：自动找硬切点（#009 九个切点和手工量的分毫不差），出每个镜头的联系表（每 0.08 秒一格）、镜头运动、`measure.md`（拆解表草稿，只剩「画面」「图形」两列要人看着填）。
+  - 要量某个东西怎么动：`--box x0,y0,x1,y1 --at 秒`（或 `--track X,Y,秒`）跟踪它，出位置和大小曲线、最接近的缓动（linear / ease-out / ease-in-out / spring）；误差 > 0.08 标「不可信」，看曲线图自己判断。一个镜头里有几段动作就加 `--span 起,止` 只拟合一段。
+  - 机器量的是数字，镜头里演了什么还是要人看联系表写。**先量、写进拆解表，再动手；做完上下并排对比。**
+- **有配乐先跑 `mm beats 音乐.mp3`**：出 BPM、每拍、小节头、高潮（drop）、突停（stop）和一张 beats.png，先看图确认小节头对不对。
+  - 切点别写死秒数，用 `mm beats beats.json --cuts "bar:1,bar:3,drop:1"` 把节拍写法换成秒，再填进配置（引擎目前只认秒，可以在旁边写 `"at_beat": "bar:3"` 备注）。
+  - 照原片卡点：`mm beats 原片.mp4 --where "3.16,5.2"` 反查原片每个切点落在第几小节第几拍，再照搬到自己的音乐上。#009 的卡法：主要切点落在小节头，中间插一刀落在第 4 拍后半拍（比下个小节头早半拍）。
+  - 图上写着「节奏不明显」就别硬卡拍，按 section / drop / stop 切。
 
 ## 6. 出片和自检
 ```bash
